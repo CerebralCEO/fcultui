@@ -6,13 +6,12 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import gsap from "gsap";
-import { screens, type Screen, type ScreenDesign } from "@/lib/data";
-import { designMeta } from "@/lib/screen-meta";
+import type { FlowStep, Screen } from "@/lib/content-types";
 import { site } from "@/lib/site";
 import { Device, SCREEN_W } from "../device/Device";
-import { screenRegistry } from "../screens";
+import ScreenView from "../device/ScreenView";
 import { useApp } from "../Providers";
-import { CloseIcon, LockIcon, LogoIcon, SearchIcon } from "../icons";
+import { CloseIcon, LogoIcon, SearchIcon } from "../icons";
 
 /* ------------------------------------------------------------------ */
 /* Data: every screen of every flow becomes a tile                     */
@@ -21,7 +20,7 @@ import { CloseIcon, LockIcon, LogoIcon, SearchIcon } from "../icons";
 type Tile = {
   id: string;
   screen: Screen;
-  design: ScreenDesign;
+  step: FlowStep;
   title: string;
   href: string;
   /** Visible height of the 844-px canvas (full, tall crop, short crop). */
@@ -40,19 +39,18 @@ function mulberry32(seed: number) {
   };
 }
 
-const ALL_TILES: Tile[] = (() => {
+function buildTiles(screens: Screen[]): Tile[] {
   const tiles = screens.flatMap((s) =>
-    s.flow.map((design, i) => {
-      const label = designMeta[design].label;
-      const title = i === 0 ? s.title : `${s.title.split(" ")[0]} ${label}`;
+    s.flow.map((step, i) => {
+      const title = i === 0 ? s.title : `${s.title} · ${step.label}`;
       return {
         id: `${s.slug}-${i}`,
         screen: s,
-        design,
+        step,
         title,
-        href: i === 0 ? `/screens/${s.slug}` : `/screens/${s.slug}#flow`,
+        href: i === 0 ? `/screens/${s.slug}` : `/screens/${s.slug}?screen=${i}`,
         crop: 844,
-        search: `${title} ${s.title} ${s.category} ${s.tagline} ${label} ${designMeta[design].tags.join(" ")}`.toLowerCase(),
+        search: `${title} ${step.title} ${s.category} ${s.tagline} ${step.label}`.toLowerCase(),
       };
     }),
   );
@@ -63,7 +61,7 @@ const ALL_TILES: Tile[] = (() => {
     [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
   }
   return tiles.map((t, i) => ({ ...t, crop: CROPS[i % CROPS.length] }));
-})();
+}
 
 /** Parallax: each column travels at its own pace. */
 const SPEEDS = [1, 0.84, 1.14, 0.92, 1.08, 0.88, 1.12, 0.95, 1.05];
@@ -124,7 +122,6 @@ const WallTile = memo(function WallTile({
   onClickCapture: (e: React.MouseEvent) => void;
 }) {
   const { platform } = useApp();
-  const { tone, Component } = screenRegistry[tile.design];
   const h = tile.crop * scale;
 
   return (
@@ -139,15 +136,10 @@ const WallTile = memo(function WallTile({
       aria-label={`${tile.title} — ${tile.screen.tagline}`}
     >
       <div className="wall-tile-canvas" style={{ transform: `scale(${scale})` }}>
-        <Device bare platform={platform} tone={tone} playing={playing} accent={tile.screen.accent}>
-          <Component />
+        <Device bare platform={platform} tone={tile.step.tone} playing={playing} accent={tile.screen.accent}>
+          <ScreenView step={tile.step} />
         </Device>
       </div>
-      {tile.screen.pro && (
-        <span className="wall-lock" aria-label="All-Access">
-          <LockIcon />
-        </span>
-      )}
       <span className="wall-meta">
         <i style={{ "--accent": tile.screen.accent } as React.CSSProperties}>{tile.screen.title[0]}</i>
         <span>
@@ -163,7 +155,8 @@ const WallTile = memo(function WallTile({
 /* Wall                                                                */
 /* ------------------------------------------------------------------ */
 
-export default function ExploreWall() {
+export default function ExploreWall({ screens }: { screens: Screen[] }) {
+  const ALL_TILES = useMemo(() => buildTiles(screens), [screens]);
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -179,7 +172,7 @@ export default function ExploreWall() {
   const drag = useRef({ active: false, startY: 0, startTarget: 0, lastY: 0, lastT: 0, velocity: 0, moved: 0 });
 
   const q = query.trim().toLowerCase();
-  const tiles = useMemo(() => (q ? ALL_TILES.filter((t) => q.split(/\s+/).every((w) => t.search.includes(w))) : ALL_TILES), [q]);
+  const tiles = useMemo(() => (q ? ALL_TILES.filter((t) => q.split(/\s+/).every((w) => t.search.includes(w))) : ALL_TILES), [q, ALL_TILES]);
   const layout = useMemo(() => computeLayout(size.w, size.h, tiles), [size, tiles]);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -380,6 +373,12 @@ export default function ExploreWall() {
       <div className="wall-fade bottom" aria-hidden />
 
       <AnimatePresence>
+        {!q && ALL_TILES.length === 0 && (
+          <motion.div className="wall-empty" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <strong>No screens yet</strong>
+            <span>New Flutter &amp; React Native screens are on their way.</span>
+          </motion.div>
+        )}
         {q && tiles.length === 0 && (
           <motion.div className="wall-empty" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             <strong>No screens match “{query}”</strong>

@@ -1,7 +1,7 @@
 ---
 version: alpha
 name: fcult-ui-design-analysis
-description: FCult UI is a dark-first gallery of mobile screens. The black canvas stays quiet so the screens themselves carry all the color. Its shell is a pixel-exact port of minimal.gallery. The page has almost no chrome: one typeface (Inter variable), 17px body text, soft pill-shaped grey controls and hairline dividers. Each card shows a live, CSS-drawn iOS or Android device that plays its animation on hover. There is no brand accent color on the site. Grey steps set the hierarchy, and the only saturated color comes from the screens inside the devices and from one lime All-Access promo tile. The site has no drop shadows and no decorative gradients, apart from the device hardware and that promo.
+description: F-Cult UI is a dark-first gallery of mobile screens. The black canvas stays quiet so the screens themselves carry all the color. Its shell is a pixel-exact port of minimal.gallery. The page has almost no chrome: one typeface (Inter variable), 17px body text, soft pill-shaped grey controls and hairline dividers. Each card shows a live, CSS-drawn iOS or Android device that plays its animation on hover. There is no brand accent color on the site. Grey steps set the hierarchy, and the only saturated color comes from the screens inside the devices and from one lime All-Access promo tile. The site has no drop shadows and no decorative gradients, apart from the device hardware and that promo.
 
 colors:
   # --- Dark theme (default; html without .light) ---
@@ -327,7 +327,7 @@ components:
 
 ## Overview
 
-FCult UI is a gallery shell: a black canvas, grey type and a grid of phone mockups. The shell is a 1:1 port of minimal.gallery. Its rules were read from the original stylesheet and checked against the live site with measurements that matched to the pixel. Nothing in the chrome competes with the content. There are no brand-colored buttons, no shadows and no decorative gradients, so each screen's own palette is the most colorful thing on the page.
+F-Cult UI is a gallery shell: a black canvas, grey type and a grid of phone mockups. The shell is a 1:1 port of minimal.gallery. Its rules were read from the original stylesheet and checked against the live site with measurements that matched to the pixel. Nothing in the chrome competes with the content. There are no brand-colored buttons, no shadows and no decorative gradients, so each screen's own palette is the most colorful thing on the page.
 
 The product-specific layer sits on top of that shell. Each card holds a **CSS-drawn device** (iPhone-style or Pixel-style). Inside it, a screen renders at its true logical size of 390 × 844 and the whole device is scaled down uniformly. Hovering a card plays the screen's animation. A global **iOS / Android** switch morphs every frame; for example, the Dynamic Island shrinks into a punch-hole camera. Whatever you build next must keep this split: the shell stays greyscale and quiet, and color lives inside the devices.
 
@@ -506,12 +506,14 @@ Gallery cards follow Mobbin's anatomy: **tile, then meta row**.
 
 ### Signature Components
 - **Device** (`components/device/Device.tsx`): `platform` is "ios" or "android" and `tone` is "light" or "dark". The tone sets the status-bar and home-indicator colors. The screen's `--accent` is passed in as a prop, and `playing` sets the `[data-playing]` attribute. Switching platform animates the frame radius, gradient, camera shape, status bar layout and buttons over 0.6s `cubic-bezier(.65,0,.35,1)`.
-- **Screens** (`components/screens/`): 390 × 844 logical px, sized in real px. Every animation is declared **only** under `.device[data-playing]`, so a preview restarts from the beginning on every hover.
+- **Screens** (`components/device/ScreenView.tsx`): 390 × 844 logical px, sized in real px. Every animation is declared **only** under `.device[data-playing]`, so a preview restarts from the beginning on every hover.
+- **`screen-pending`** (no live render yet): a tone-aware radial surface (dark `#1f1f22 → #0d0d0e`, light `#fff → #eeeeef`), three 12px dots in the screen `--accent` that bounce while playing, the step label at 30px/510 and a 17px "Live preview is building" line at 50% opacity.
+- **`posts-empty`** (grid before the first publish): a 1px dashed `{colors.border}` box, radius 24, 96px padding, with a 22px/510 title and a muted 46ch line.
 - **Playback trigger**: on pointer devices a preview plays on hover. On touch devices it plays while the card sits in the middle 30% of the viewport (IntersectionObserver).
 - **Search modal**: 500px wide, 120px from the top, radius 14. It opens with a spring (380/34) from y30 and scale .98, and closes on ESC. The mode switch (Screens / Templates / Tools) opens a small 150px menu. The category list items stagger in by 18ms each.
 
 ### Screen Detail Page (`/screens/[slug]`)
-This page follows the Aceternity component-page anatomy, built only from FCult tokens:
+This page follows the Aceternity component-page anatomy, built only from F-Cult UI tokens:
 - **Grid**: a `264px` sticky left rail, then `.detail-body`. The body contains the content column (max 880px, **centred** with `justify-self: center` so the gaps on both sides stay equal) and a `190px` "On this page" TOC at 1300px and above. The body starts 56px after the rail, with a 48px gap before the TOC. Below 992px only the content column remains.
 - **Persistent shell**: the rail lives in `app/screens/(detail)/layout.tsx`, so it never remounts between screens (it keeps its scroll position, and the active pill springs from item to item). The article fades and rises 14px (0.6s expo) via `(detail)/template.tsx`.
 - **Left rail** (`.detail-sidebar`, cult-ui inspired, **no colour dots**):
@@ -535,20 +537,23 @@ This page follows the Aceternity component-page anatomy, built only from FCult t
   - A breadcrumb (15px) and an h1 at `{typography.display-intro}` size, left-aligned, revealed with SplitText.
   - A 19px lead paragraph.
   - Chips (14px pills on `{colors.surface}`). Framework chips use `surface-25` with ink text; Pro screens get a lime chip.
-- **Preview panel**:
-  - A `Segmented` Preview | Code control on the left. Every segmented control is a `{colors.surface}` track with a `{colors.surface-50}` spring pill (500/40).
-  - On the right: the iOS/Android toggle, the solid Flutter/React Native switch, a "Copy prompt" `tool-btn` (36px, `surface-25`) and a 36px fullscreen `tool-icon`.
-  - The panel itself is 680px tall (600px for examples, 560px on mobile), `{colors.surface-subtle}` with a floor radial, hairline border and 18px radius. It holds a framed `<Device>` at 86% fit.
-  - A glass "Replay" pill sits bottom-left and remounts the device so one-shot animations replay.
-  - Switching tabs crossfades: preview blur-scales, code slides 12px, over 0.45s expo.
-  - Fullscreen opens a blurred backdrop portal with a 92% device; ESC closes it.
+- **Flow strip** (`components/detail/ScreenWorkspace.tsx`, top of `#preview`; this *is* the preview, there is no separate preview panel):
+  - Head: a 26px/510 "Screens" h2 with a muted 15px "N in this flow · select one to see its code" line. On the right: the iOS/Android toggle and two 36px round `surface-25` arrow buttons (35% opacity when there is nothing further to scroll).
+  - Tiles (Mobbin-style): **big, borderless, frameless** 390 × 844 screens. They are 264px wide (216px below 768px) and use the bare scaler's own corner radius and 1px hairline, with an 18px gap. Unselected tiles sit at 78% opacity; hover does nothing to the tile itself (no lift, zoom, brightening or playback) and only fades in the expand button. Only the selected tile plays its animation.
+  - The selected tile gets a `layoutId` ring: a 2px `{colors.font-contrast}` outline 6px outside the screen, whose radius follows the platform (52/390 iOS, 34/390 Android of the tile width). It springs 380/34 between tiles.
+  - Meta row under each tile: `01` (low contrast, tabular) + 15px/510 label, and on the selected tile a muted "● Viewing code" note with a pulsing dot.
+  - Scrolling: drag with the mouse (grab cursor, momentum glide, and a drag never selects), trackpad or wheel, the arrow buttons (one tile per step), or ←/→ when focused. Touch uses native scroll with mandatory snap. 56px edge fades appear only on the sides that have more content. On mobile the strip bleeds to the right page edge.
+  - A glass 32px expand button (bottom-right of a tile, shown on hover and always on touch) opens the **fullscreen viewer**: a blurred backdrop portal with a framed device at 92% fit and a bottom pill (prev, `02 / 04 Sign in`, next, replay). ←/→ steps through the flow, ESC closes, and the tile selection follows.
+  - The selection lives in `?screen=i` (0 = cover), which the Explore wall links to. It drives the code panel, Installation source/usage and Props. Section headings show it: `Installation · Settings` (suffix at weight 400, low contrast).
+- **Code panel** (`components/detail/CodePanel.tsx`, `#code`, 44px below the strip):
+  - Bar: a 20px/510 title (code icon, `01` low contrast, screen label) that slides when the selection changes. On the right: the solid Flutter/React Native switch and a "Copy prompt" `tool-btn` (36px, `surface-25`; "Prompt" below 768px, where the switch fills the row).
+  - Below: a borderless 640px area (540px on mobile) holding a `fill` code block that scrolls internally. It crossfades (y10 + blur 4 → 0, 0.35s expo) on selection change.
 - **Code block** (`.code`):
   - `{colors.code-background}`, hairline border, 14px radius, and a 44px header with the file name in 13px mono plus a Copy button.
   - Highlighting is done at build time by Shiki (github dark/light dual theme via `--shiki-*` vars), in 13px/1.7 mono with muted line numbers.
-  - **Framework pairs render both panes in one grid cell**; the inactive pane is hidden by `html[data-fw]`, so switching never shifts layout or flashes on load.
+  - **Framework pairs render both panes in one grid cell**. The inactive pane is hidden by `html[data-fw]` **and collapsed to `height: 0`**, so the block always ends at the visible file's last line (no trailing blank space). The switch is CSS-driven, so there is no flash on load.
   - Long files collapse to 340px behind a fade and an "Expand" `button-mini`.
 - **Installation**: CLI | Manual segmented control, then a numbered step timeline (hairline left rule, 30px `surface-25` number bubbles with a canvas ring). Manual steps are: dependencies, tokens, source and usage.
-- **Screens in this flow**: one `PreviewPanel` per remaining flow screen, each under a 20px/510 h3.
 - **Props**: a hairline-bordered table (14px muted headers, 15px cells, 13px mono `code` chips on `{colors.surface}`) with Flutter and React Native type columns. On phones each row becomes a stacked card (label column 104px + value).
 - **Phone layout (≤767px)**:
   - Preview/Code tabs stretch to full width, and the tools become one swipeable row that bleeds to the edges with fades.
@@ -578,6 +583,36 @@ An immersive, applama-style wall of **every screen of every flow** (92 tiles). T
   - Right: a 48px close circle (history back) and a white "Get started" pill.
   - On phones only the brand icon, search and close remain, at 44px.
 - 150px (top) and 110px (bottom) canvas fades.
+
+### Auth Modal & Locked Code
+Clerk supplies the logic (`useSignIn` / `useSignUp` signal API, `signIn.sso`), and all UI is ours. Code: `components/auth/`.
+- **`auth-modal`**:
+  - A portalled overlay with backdrop blur 8 and a 408px panel: radius 24, hairline border, `{colors.surface-subtle}` (modal background). It springs in from y28 / scale .97 (380/34), and ESC or a backdrop click closes it.
+  - On phones (≤520px) it becomes a bottom sheet.
+  - Content: a 48px icon tile (the Flutter mark when opened from locked code, otherwise the logo), a 22px/510 title and a muted 15px lead.
+  - **Continue with Google**: 48px, radius 14, white.
+  - An "or" hairline divider.
+  - Email input: 48px, radius 14, `surface-subtle`, `hairline-strong` border.
+  - **Continue with email**: 48px, `surface-50`.
+- **OTP step**: slides in from x16, with six 48 × 58 digit boxes (radius 14, 24px/510) that stagger in. Paste fills all six and the code auto-verifies when complete. Below: "Use a different email" and "Resend in 0:30".
+- **States**: errors sit in a red-tinted 12px-radius note; when Clerk keys are missing a neutral notice replaces it. On success a lime-gradient check shows "You're in", then the modal closes after 1.1s.
+- **Header account**: signed out shows a "Sign in" menu item; signed in shows a 30px avatar with a ring and a 240px dropdown (name, email, lime "Flutter code unlocked" pill, Sign out). The mobile menu gets an account row (lime "Sign in — unlock Flutter code" button when signed out).
+- **`code-locked`** (members-only Flutter pane, `components/detail/LockedCode.tsx`):
+  - **Ghost code**: syntax-coloured bars (keyword `#ff7b72`, type `#79c0ff`, call `#d2a8ff`, string `#a5d6ff`, punctuation `surface-150`) with code-like indentation. It uses the **same line count as the real file**, blurred 3.5px at 55% opacity, fades toward the bottom, and has a slow 3.6s diagonal light sweep. It contains no real source.
+  - A **sticky, zero-height rail** keeps the card in view at any file length, over a radial `code-background` veil.
+  - **Full card** (inside the Preview/Code panel), 420px, radius 24:
+    - Glass gradient background and a **gradient hairline border** (lime → white 7% → mint, via mask-composite), with a soft lime halo behind the emblem.
+    - **Emblem**: a 60px dark glossy tile with the Flutter mark, a **conic lime/mint ring whose angle travels** (`@property --lock-angle`, 6s), and a 28px lime lock badge that floats 2px.
+    - A "Members only · N lines of Dart" chip with a pulsing lime dot, then a 22px/510 title "Unlock the Flutter source" and a muted 14.5px lead.
+    - A **perk list** in a subtle inset box: lime check circles, staggered in.
+    - A white 48px primary "Sign in to unlock →"; the arrow nudges 3px on hover.
+    - A secondary "View React Native code — free" that switches the global framework to RN.
+  - **Compact card** (short install-step blocks): a single row with a 48px emblem, "Flutter source is members-only", "N lines of Dart · free with an account" and a pill **Unlock** button. It wraps on phones.
+  - **Phones (≤767px)**: the card tightens (60px emblem, 19px title, perks hidden) so the CTA always fits in the 540px panel.
+  - The code header shows a lime "Members" chip; Copy becomes "Unlock" and Expand is hidden while locked. While fetching, the badge spins and the title reads "Unlocking…". The real code then fades in from a 6px blur.
+  - All loops stop under reduced motion.
+- **Tile toolbar**: with Flutter selected and signed out, "Copy" becomes the lime **Unlock** button, which opens the modal. React Native is always "Copy".
+- **Lime is the members colour**: the promo gradient (`{colors.promo-lime}` → `{colors.promo-mint}`) marks membership and unlock actions only.
 
 ### Footer
 **`footer`**: a hairline top border, the logo mark with a one-line pitch, then three menus (Site / Resources / Social) whose headings are `{colors.body}` at 60% opacity. The bottom bar holds the © line, the social links (below 1500px) and the `Alt + M` theme switch. Columns fade up with a 70ms stagger on scroll.
@@ -640,7 +675,8 @@ Devices re-measure with ResizeObserver and scale to fit. Remote images (tool ico
 
 ## Known Gaps
 - No error, validation or empty states have been built yet (`{colors.error}` exists but is unused).
-- The detail page's flow examples reuse the demo HTML screens; the React Native web render and Flutter multi-view host (PLAN §2.1–2.2) are not wired yet.
+- Sign-in is implemented but untested end-to-end until Clerk keys are added to `.env.local` (without them the modal shows a notice and Flutter stays locked).
+- No live screen renders yet: every screen shows the `screen-pending` surface until the React Native web render and Flutter multi-view host (PLAN §2.1–2.2) are wired.
 - `npx fcultui` CLI commands are displayed but the CLI does not exist yet.
 - The light theme is ported from the original's tokens, but the device mockups and promo tile have not been separately tuned for it.
 - Tag filtering, pagination and bookmarks exist only as UI; they are not wired to data yet.

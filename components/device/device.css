@@ -229,3 +229,21 @@
   pointer-events: none;
 }
 html.light .device-scaler.is-bare::after { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08); }
+
+/* ---------- Pending screen (no live render yet) ---------- */
+.screen-pending {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  padding: var(--safe-top) 32px var(--safe-bottom); text-align: center;
+  color: #f5f5f5; background: radial-gradient(120% 70% at 50% 0%, #1f1f22 0%, #0d0d0e 70%);
+}
+.device[data-tone="light"] .screen-pending { color: #111; background: radial-gradient(120% 70% at 50% 0%, #ffffff 0%, #eeeeef 70%); }
+.screen-pending strong { font-size: 30px; font-weight: 510; letter-spacing: -0.02em; }
+.screen-pending em { font-style: normal; font-size: 17px; opacity: 0.5; }
+.screen-pending-mark { display: flex; gap: 8px; margin-bottom: 18px; }
+.screen-pending-mark span {
+  width: 12px; height: 12px; border-radius: 50%; background: var(--accent, currentColor); opacity: 0.25;
+}
+.device[data-playing] .screen-pending-mark span { animation: pendingDot 1.2s ease-in-out infinite; }
+.device[data-playing] .screen-pending-mark span:nth-child(2) { animation-delay: 0.15s; }
+.device[data-playing] .screen-pending-mark span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes pendingDot { 40% { opacity: 1; transform: translateY(-6px); } }

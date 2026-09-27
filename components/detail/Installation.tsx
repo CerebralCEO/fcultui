@@ -2,16 +2,17 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import type { CodeFile } from "@/lib/code";
+import type { CodeFile, FlutterFile } from "@/lib/code-types";
 import Segmented from "./Segmented";
 import CodeBlock from "./CodeBlock";
 
-type Pair = { flutter: CodeFile; rn: CodeFile };
+type Pair = { flutter: FlutterFile; rn: CodeFile };
 
 export type InstallData = {
   cli: Pair;
   deps: Pair;
-  tokens: Pair;
+  /** Shared design tokens — optional until tokens ship with the content (docs/PLAN.md §5 design_tokens). */
+  tokens?: Pair;
   source: Pair;
   usage: Pair;
 };
@@ -63,10 +64,12 @@ export default function Installation({ data }: { data: InstallData }) {
               <Step title="Install dependencies">
                 <CodeBlock {...data.deps} />
               </Step>
-              <Step title="Add the design tokens">
-                <p className="step-note">Shared by every screen — add it once. Both frameworks read identical values.</p>
-                <CodeBlock {...data.tokens} collapsible />
-              </Step>
+              {data.tokens && (
+                <Step title="Add the design tokens">
+                  <p className="step-note">Shared by every screen — add it once. Both frameworks read identical values.</p>
+                  <CodeBlock {...data.tokens} collapsible />
+                </Step>
+              )}
               <Step title="Copy the source code">
                 <CodeBlock {...data.source} collapsible />
               </Step>

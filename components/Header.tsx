@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { BookmarkIcon, SearchIcon } from "./icons";
 import { useApp } from "./Providers";
 import MobileMenu from "./MobileMenu";
+import AccountButton from "./auth/AccountButton";
 import { site } from "@/lib/site";
 import type { SearchMode } from "@/lib/data";
 
@@ -89,6 +90,7 @@ export default function Header() {
                   )}
                 </Link>
               </li>
+              <AccountButton />
             </ul>
           </div>
         </div>

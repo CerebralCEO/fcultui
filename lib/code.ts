@@ -1,32 +1,14 @@
 /**
- * Build-time code pipeline (server only): reads the Flutter / React Native sources in `content/code`,
- * personalises them for a screen (component name, accent colour) and pre-highlights them with Shiki.
- * The client never ships a highlighter — it receives ready HTML.
+ * Code pipeline (server only): turns a screen's uploaded Flutter / React Native sources (Neon) into
+ * ready-to-render CodeFiles. Sources are highlighted at save time by the admin panel; anything missing
+ * `highlighted` HTML is highlighted here with Shiki. The client never ships a highlighter.
  */
-import { readFile } from "node:fs/promises";
-import path from "node:path";
+import "server-only";
 import { createHighlighter, type Highlighter } from "shiki";
-import type { ScreenDesign } from "./data";
-import { designMeta, pascal, snake } from "./screen-meta";
+import type { CodeFile, Lang } from "./code-types";
+import type { ScreenDetail, SourceSet, StepDetail } from "./content";
 
-export type Lang = "dart" | "tsx" | "ts" | "bash" | "yaml";
-
-export type CodeFile = {
-  filename: string;
-  lang: Lang;
-  code: string;
-  html: string;
-};
-
-export type ScreenCode = {
-  name: string;
-  flutter: CodeFile;
-  rn: CodeFile;
-  flutterUsage: CodeFile;
-  rnUsage: CodeFile;
-};
-
-const ROOT = path.join(process.cwd(), "content", "code");
+export type { CodeFile, Lang } from "./code-types";
 
 let highlighter: Promise<Highlighter> | null = null;
 const getHighlighter = () =>
@@ -44,32 +26,60 @@ export async function highlight(code: string, lang: Lang) {
   });
 }
 
-async function file(filename: string, lang: Lang, code: string): Promise<CodeFile> {
-  return { filename, lang, code: code.trimEnd(), html: await highlight(code, lang) };
+async function file(filename: string, lang: Lang, code: string, html?: string | null): Promise<CodeFile> {
+  return { filename, lang, code: code.trimEnd(), html: html ?? (await highlight(code, lang)) };
 }
 
-const fill = (src: string, name: string, title: string, accent: string) =>
-  src.replaceAll("__NAME__", name).replaceAll("__TITLE__", title).replaceAll("__ACCENT__", accent.replace("#", "").toUpperCase());
+export const pascal = (s: string) =>
+  s
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join("");
 
-/** Code for one design, personalised as `<name>Screen`. */
-export async function getScreenCode(design: ScreenDesign, title: string, accent: string): Promise<ScreenCode> {
-  const name = pascal(title);
-  const [dart, tsx] = await Promise.all([
-    readFile(path.join(ROOT, design, "screen.dart"), "utf8"),
-    readFile(path.join(ROOT, design, "Screen.tsx"), "utf8"),
-  ]);
+export const snake = (s: string) => pascal(s).replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
 
-  const dartFile = `lib/screens/${snake(title)}_screen.dart`;
-  const tsxFile = `src/screens/${name}Screen.tsx`;
+const langOf = (path: string): Lang => {
+  const ext = path.split(".").pop()?.toLowerCase();
+  if (ext === "dart") return "dart";
+  if (ext === "ts") return "ts";
+  if (ext === "yaml" || ext === "yml") return "yaml";
+  return "tsx";
+};
 
-  const [flutter, rn, flutterUsage, rnUsage] = await Promise.all([
-    file(dartFile, "dart", fill(dart, name, title, accent)),
-    file(tsxFile, "tsx", fill(tsx, name, title, accent)),
+const main = (set: SourceSet | null, fallback: { path: string; note: string }) => {
+  const f = set?.files[0];
+  return f
+    ? file(f.path, langOf(f.path), f.content, f.html)
+    : file(fallback.path, langOf(fallback.path), fallback.note);
+};
+
+export type StepCode = {
+  name: string;
+  flutter: CodeFile;
+  rn: CodeFile;
+  flutterUsage: CodeFile;
+  rnUsage: CodeFile;
+  flutterDeps: CodeFile;
+  rnDeps: CodeFile;
+};
+
+async function stepCode(step: StepDetail): Promise<StepCode> {
+  const name = pascal(step.title);
+  const dartPath = `lib/screens/${snake(step.title)}_screen.dart`;
+  const tsxPath = `src/screens/${name}Screen.tsx`;
+
+  const [flutter, rn, flutterUsage, rnUsage, flutterDeps, rnDeps] = await Promise.all([
+    main(step.flutter, { path: dartPath, note: "// Flutter source has not been uploaded for this screen yet." }),
+    main(step.rn, { path: tsxPath, note: "// React Native source has not been uploaded for this screen yet." }),
     file(
       "lib/main.dart",
       "dart",
-      `import 'package:flutter/material.dart';
-import 'screens/${snake(title)}_screen.dart';
+      step.flutter?.usage ||
+        `import 'package:flutter/material.dart';
+import 'screens/${snake(step.title)}_screen.dart';
 
 void main() => runApp(
       MaterialApp(
@@ -82,7 +92,8 @@ void main() => runApp(
     file(
       "App.tsx",
       "tsx",
-      `import { SafeAreaProvider } from "react-native-safe-area-context";
+      step.rn?.usage ||
+        `import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ${name}Screen } from "./src/screens/${name}Screen";
 
 export default function App() {
@@ -93,36 +104,15 @@ export default function App() {
   );
 }`,
     ),
-  ]);
-
-  return { name, flutter, rn, flutterUsage, rnUsage };
-}
-
-/** Shared token files + install snippets (same for every screen). */
-export async function getSharedCode(design: ScreenDesign) {
-  const [dartTokens, tsTokens] = await Promise.all([
-    readFile(path.join(ROOT, "_shared", "tokens.dart"), "utf8"),
-    readFile(path.join(ROOT, "_shared", "tokens.ts"), "utf8"),
-  ]);
-  const deps = designMeta[design].rnDeps;
-
-  const [flutterTokens, rnTokens, flutterDeps, rnDeps, fonts] = await Promise.all([
-    file("lib/fcult/tokens.dart", "dart", dartTokens),
-    file("src/fcult/tokens.ts", "ts", tsTokens),
-    file("Terminal", "bash", "flutter pub get"),
-    file("Terminal", "bash", `npx expo install ${deps.join(" ")}`),
+    file("Terminal", "bash", step.flutter?.deps.length ? `flutter pub add ${step.flutter.deps.join(" ")}` : "flutter pub get"),
     file(
-      "pubspec.yaml",
-      "yaml",
-      `flutter:
-  fonts:
-    - family: Inter
-      fonts:
-        - asset: assets/fonts/Inter-Variable.ttf`,
+      "Terminal",
+      "bash",
+      `npx expo install ${(step.rn?.deps.length ? step.rn.deps : ["react-native-safe-area-context"]).join(" ")}`,
     ),
   ]);
 
-  return { flutterTokens, rnTokens, flutterDeps, rnDeps, fonts };
+  return { name, flutter, rn, flutterUsage, rnUsage, flutterDeps, rnDeps };
 }
 
 export async function cliCommand(slug: string) {
@@ -131,4 +121,25 @@ export async function cliCommand(slug: string) {
     file("Terminal", "bash", `npx fcultui@latest add ${slug} --react-native`),
   ]);
   return { flutter, rn };
+}
+
+/** Everything the details page shows for one app: code for every step of its flow + the CLI command. */
+export async function getScreenBundle(detail: ScreenDetail) {
+  const [steps, cli] = await Promise.all([Promise.all(detail.steps.map(stepCode)), cliCommand(detail.slug)]);
+  return { steps, cli };
+}
+
+export type ScreenBundle = Awaited<ReturnType<typeof getScreenBundle>>;
+
+/** Keys shared by the page's LockedFile stubs and /api/code/[slug]. */
+export const flutterKey = (i: number, part: "source" | "usage") => `s${i}-${part}`;
+
+/** The Flutter files gated behind sign-in, keyed so LockedFile stubs can be swapped for the real code. */
+export function flutterFiles(b: ScreenBundle): Record<string, CodeFile> {
+  return Object.fromEntries(
+    b.steps.flatMap((s, i) => [
+      [flutterKey(i, "source"), s.flutter],
+      [flutterKey(i, "usage"), s.flutterUsage],
+    ]),
+  );
 }

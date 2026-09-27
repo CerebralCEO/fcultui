@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import type { Promo, Screen } from "@/lib/data";
+import type { Promo, Screen } from "@/lib/content-types";
 import { BookmarkIcon, CheckIcon, CodeIcon, CopyIcon, FlutterIcon, LockIcon, ReactIcon } from "./icons";
 import FrameworkSwitch from "./FrameworkSwitch";
 import { useApp } from "./Providers";
+import { useAuthState } from "./auth/AuthProvider";
 import ScreenCarousel from "./ScreenCarousel";
 
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -87,18 +88,22 @@ function CopyButton({ slug }: { slug: string }) {
   );
 }
 
-function TileBar({ slug, pro, saveId, codeHref = "/screens" }: { slug: string; pro?: boolean; saveId?: string; codeHref?: string }) {
+function TileBar({ slug, saveId, codeHref = "/screens" }: { slug: string; saveId?: string; codeHref?: string }) {
+  const { framework } = useApp();
+  const { signedIn, openAuth } = useAuthState();
+  // React Native code is free; Flutter code is members-only
+  const locked = framework === "flutter" && !signedIn;
   return (
     <div className="tile-bar">
       <FrameworkSwitch />
       <span className="tile-bar-divider" />
-      {pro ? (
-        <Link href="/about" className="tile-bar-btn pro">
+      {locked ? (
+        <button className="tile-bar-btn pro" onClick={() => openAuth("flutter")}>
           <span className="tile-bar-btn-inner">
             <LockIcon />
             Unlock
           </span>
-        </Link>
+        </button>
       ) : (
         <CopyButton slug={slug} />
       )}
@@ -110,16 +115,11 @@ function TileBar({ slug, pro, saveId, codeHref = "/screens" }: { slug: string; p
   );
 }
 
-function TileBadges({ badge, pro }: { badge?: string; pro?: boolean }) {
-  if (!badge && !pro) return null;
+function TileBadges({ badge }: { badge?: string }) {
+  if (!badge) return null;
   return (
     <div className="tile-badges">
-      {pro && (
-        <span className="tile-lock" title="All-Access">
-          <LockIcon />
-        </span>
-      )}
-      {badge && <span className="tile-badge">{badge}</span>}
+      <span className="tile-badge">{badge}</span>
     </div>
   );
 }
@@ -158,8 +158,8 @@ export function ScreenCard({ screen }: { screen: Screen }) {
           playing={playing}
           accent={screen.accent}
         />
-        <TileBadges badge={screen.badge} pro={screen.pro} />
-        <TileBar slug={screen.slug} pro={screen.pro} saveId={`s-${screen.slug}`} codeHref={`/screens/${screen.slug}#code`} />
+        <TileBadges badge={screen.badge} />
+        <TileBar slug={screen.slug} saveId={`s-${screen.slug}`} codeHref={`/screens/${screen.slug}#code`} />
       </div>
       <AppMeta title={screen.title} tagline={screen.tagline} accent={screen.accent} href={`/screens/${screen.slug}`} />
     </div>
@@ -167,16 +167,22 @@ export function ScreenCard({ screen }: { screen: Screen }) {
 }
 
 export function PromoCard({ promo }: { promo: Promo }) {
+  const { signedIn, openAuth } = useAuthState();
+  const onClick = (e: React.MouseEvent) => {
+    if (signedIn) return;
+    e.preventDefault();
+    openAuth("flutter");
+  };
   return (
     <div className="post sponsor promo" data-card>
       <div className="media tile">
-        <Link href={promo.href} className="tile-link">
+        <Link href={promo.href} className="tile-link" onClick={onClick}>
           <div className="promo-art">
-            <span className="promo-kicker">All-Access</span>
+            <span className="promo-kicker">{signedIn ? "Member" : "Free account"}</span>
             <strong>
-              Every screen.
+              Flutter code,
               <br />
-              Both frameworks.
+              unlocked.
             </strong>
             <span className="promo-chips">
               <em>
@@ -190,12 +196,14 @@ export function PromoCard({ promo }: { promo: Promo }) {
         </Link>
       </div>
       <div className="app-meta">
-        <Link href={promo.href} className="app-icon promo-icon" aria-hidden tabIndex={-1}>
+        <Link href={promo.href} className="app-icon promo-icon" aria-hidden tabIndex={-1} onClick={onClick}>
           <LockIcon />
         </Link>
         <div className="app-meta-text">
           <h3>
-            <Link href={promo.href}>All-Access</Link>
+            <Link href={promo.href} onClick={onClick}>
+              {signedIn ? "You're a member" : "Join free"}
+            </Link>
           </h3>
           <p>{promo.title}</p>
         </div>

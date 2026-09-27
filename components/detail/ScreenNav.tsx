@@ -2,18 +2,22 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useDragControls, type PanInfo } from "framer-motion";
-import { screens, type Screen } from "@/lib/data";
+import type { Screen } from "@/lib/content-types";
 import { site } from "@/lib/site";
-import { ArrowRightIcon, CloseIcon, LockIcon, SearchIcon } from "../icons";
+import { ArrowRightIcon, CloseIcon, SearchIcon } from "../icons";
 import { getLenis } from "../SmoothScroll";
+import { useAuthState } from "../auth/AuthProvider";
 import { ScaledDevice } from "../device/Device";
-import { screenRegistry } from "../screens";
+import ScreenView from "../device/ScreenView";
 import { useApp } from "../Providers";
 
 const PEEK_H = 440;
+
+/** Live app list from the server layout (the rail, sheet and bar all read it). */
+const ScreensCtx = createContext<Screen[]>([]);
 
 /** Floating live preview beside the rail — follows the hovered item with a spring. */
 function NavPeek({ peek }: { peek: { s: Screen; y: number; x: number } | null }) {
@@ -40,14 +44,9 @@ function NavPeek({ peek }: { peek: { s: Screen; y: number; x: number } | null })
                 exit={{ opacity: 0, y: -14, scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 420, damping: 36 }}
               >
-                {(() => {
-                  const { tone, Component } = screenRegistry[peek.s.design];
-                  return (
-                    <ScaledDevice bare platform={platform} tone={tone} playing accent={peek.s.accent} fit={1}>
-                      <Component />
-                    </ScaledDevice>
-                  );
-                })()}
+                <ScaledDevice bare platform={platform} tone={peek.s.flow[0].tone} playing accent={peek.s.accent} fit={1}>
+                  <ScreenView step={peek.s.flow[0]} />
+                </ScaledDevice>
               </motion.div>
             </AnimatePresence>
           </div>
@@ -114,12 +113,13 @@ function ScreenList({
   onPeek,
   onPeekEnd,
 }: { active: string; pillId: string; onNavigate?: () => void } & PeekHandlers) {
+  const screens = useContext(ScreensCtx);
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const q = query.trim().toLowerCase();
   const groups = useMemo(
     () => groupByCategory(q ? screens.filter((s) => `${s.title} ${s.category} ${s.tagline}`.toLowerCase().includes(q)) : screens),
-    [q],
+    [q, screens],
   );
 
   const toggle = (category: string) =>
@@ -204,11 +204,6 @@ function ScreenList({
                               <motion.span layoutId={pillId} className="nav-pill" transition={{ type: "spring", stiffness: 420, damping: 38 }} />
                             )}
                             <span className="nav-title">{s.title}</span>
-                            {s.pro && (
-                              <span className="nav-lock" title="All-Access">
-                                <LockIcon />
-                              </span>
-                            )}
                             {s.badge && <em className={`nav-badge ${s.badge.toLowerCase()}`}>{s.badge}</em>}
                           </Link>
                         </li>
@@ -226,21 +221,23 @@ function ScreenList({
 }
 
 function Promo() {
+  const { signedIn, openAuth } = useAuthState();
+  if (signedIn) return null;
   return (
     <div className="side-promo">
       <div className="side-promo-art">
-        <strong>All-Access</strong>
+        <strong>Flutter, unlocked</strong>
       </div>
       <p className="side-promo-title">Ship faster with {site.name}</p>
-      <p className="side-promo-copy">Every screen and app kit, in Flutter and React Native, for a one-time payment.</p>
-      <Link href="/about" className="side-promo-btn">
-        Get All-Access
-      </Link>
+      <p className="side-promo-copy">React Native code is free for everyone. Sign in free to copy every Flutter screen too.</p>
+      <button className="side-promo-btn" onClick={() => openAuth("flutter")}>
+        Create free account
+      </button>
     </div>
   );
 }
 
-export default function ScreenNav() {
+export default function ScreenNav({ screens }: { screens: Screen[] }) {
   const pathname = usePathname();
   const active = pathname.split("/")[2] ?? "";
   const index = screens.findIndex((s) => s.slug === active);
@@ -313,7 +310,7 @@ export default function ScreenNav() {
   };
 
   return (
-    <>
+    <ScreensCtx.Provider value={screens}>
       {/* ---------- Desktop rail ---------- */}
       <aside className="detail-sidebar">
         <div className="detail-sidebar-scroll" ref={railRef} data-lenis-prevent onScroll={() => peek && hidePeek()}>
@@ -406,15 +403,12 @@ export default function ScreenNav() {
       </AnimatePresence>,
           document.body,
         )}
-    </>
+    </ScreensCtx.Provider>
   );
 }
 
 /** Previous / next screen cards at the end of the article (docs-style pager). */
-export function ScreenPager({ slug }: { slug: string }) {
-  const i = screens.findIndex((s) => s.slug === slug);
-  const prev = screens[i - 1];
-  const next = screens[i + 1];
+export function ScreenPager({ prev, next }: { prev?: Pick<Screen, "slug" | "title">; next?: Pick<Screen, "slug" | "title"> }) {
   return (
     <nav className="pager" aria-label="Screen pagination">
       {prev ? (

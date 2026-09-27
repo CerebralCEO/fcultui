@@ -1,4 +1,4 @@
-# FCult UI — Product & Architecture Plan
+# F-Cult UI — Product & Architecture Plan
 
 > লক্ষ্য: হাজার হাজার ready-to-implement mobile screen। প্রতিটার **Flutter ও React Native (Expo)** code থাকবে।
 > একটা toggle দিয়ে দুটোর মধ্যে switch করা যাবে, আর UI, layout ও animation হুবহু একই থাকবে।
@@ -14,6 +14,9 @@
 | Hosting | **Vercel** (serverless functions + ISR)। Cloudflare ব্যবহার হবে না |
 | Database | **Neon Postgres + Drizzle ORM**। GitHub-কে database হিসেবে ব্যবহার হবে না |
 | Auth | **Clerk**। Sign-in/Sign-up modal-এর design **আমাদের নিজস্ব** (DESIGN.md অনুযায়ী) |
+| Brand | **F-Cult UI** |
+| Code access | **React Native code সবার জন্য free।** **Flutter code শুধু signed-in member-দের জন্য** (free account, login modal) |
+| Sign-in পদ্ধতি | **Email OTP + Google** (GitHub নয়) |
 | Admin | শুধু একজন: owner (Clerk `publicMetadata.role = "admin"`) |
 | React Native | **Expo** (+ Reanimated, react-native-web) |
 | Flutter preview | **Multi-view embedding (primary) + iframe (fallback)**, details page-এ |
@@ -57,7 +60,7 @@
 - প্রতিটা screen-এর TSX **Babel (Reanimated/worklets plugin) → esbuild** দিয়ে একটা ESM bundle হয় (admin-এ save করার সময়, Vercel function-এ)।
 - Bundle থাকে **Vercel Blob**-এ। Site `import()` দিয়ে load করে, আর shared dependency (react, react-native-web, reanimated, expo-linear-gradient, vector-icons, svg) আমাদের নিজস্ব import map থেকে একবারই নামে।
 - Grid আর Explore-এ tile দৃশ্যমান হলে mount হয়, দূরে গেলে unmount হয় (virtualization)। Animation চলে শুধু hover-এ বা (touch device-এ) screen-এর মাঝখানে এলে। এখনকার `usePlayback` আর `data-playing` contract একই থাকবে।
-- এখনকার HTML placeholder screen (`components/screens/`) এই render দিয়ে বদলে যাবে।
+- `components/device/ScreenView.tsx`-এর "preview building" অবস্থা এই render দিয়ে বদলে যাবে।
 
 ### 2.2 Flutter: Multi-view embedding (primary)
 আপনার দেওয়া দুই option-এর তুলনা:
@@ -163,18 +166,27 @@ purchases       user_id, provider, order_id, plan, created_at
 ```
 
 - Grid-এর জন্য হালকা query (slug, title, tagline, category, accent, badge, is_pro, rn_bundle_url) আর details page-এর জন্য পূর্ণ query (sources, props, flow)। দুটো আলাদা cache tag-এ থাকবে।
-- এখনকার `lib/data.ts`-এর demo data আর `content/code/*` একটা **seed script** দিয়ে DB-তে তোলা হবে। তারপর `lib/data.ts` সরে যাবে।
+- Demo data আর `content/code/*` আর নেই (2026-09-28 মুছে ফেলা হয়েছে)। DB খালি দিয়ে শুরু, আসল screen admin panel থেকে upload হবে। `tokens`, `builds` আর `design_tokens` table পরের ধাপে যোগ হবে।
 
 ---
 
 ## 6. Auth (Clerk, নিজস্ব design)
 
 - **Modal:** আমাদের নিজস্ব component (`components/auth/AuthModal.tsx`), Framer Motion spring, DESIGN.md token। Clerk-এর UI component ব্যবহার হবে না, শুধু hook (`useSignIn`, `useSignUp`, OAuth redirect)।
-- **Sign-in পদ্ধতি:** Email + OTP code, Google, GitHub।
+- **Sign-in পদ্ধতি:** Email OTP আর Google। একটা email flow-তেই নতুন user-এর sign-up আর পুরনো user-এর sign-in দুটোই হয়।
 - **Admin:** Clerk dashboard-এ নিজের user-এ `publicMetadata.role = "admin"` দিতে হবে।
   - `proxy.ts`: `/admin(.*)` আর `/api/admin(.*)`-এ `clerkMiddleware` দিয়ে admin ছাড়া বাকিদের redirect।
   - প্রতিটা Server Action-এর শুরুতে আবার role যাচাই হবে (defence in depth)।
-- **পরে:** Pro content (All-Access)-এর জন্য `purchases` table দেখে access দেওয়া হবে।
+- **Code access নিয়ম (✅ তৈরি):**
+  - React Native code page-এর HTML-এ থাকে, সবাই দেখতে ও copy করতে পারে।
+  - Flutter code **কখনো static HTML-এ যায় না।** Page-এ শুধু same-height locked stub (`LockedFile`: filename + line সংখ্যা, কোনো code নয়) থাকে।
+  - Login করলে `FlutterCodeProvider` `/api/code/[slug]`-কে ডাকে। সেই route Clerk-এর `auth()` দিয়ে যাচাই করে আসল Flutter file পাঠায় (`Cache-Control: private, no-store`)।
+  - Signed-out অবস্থায় Flutter-এর Copy/Unlock চাপলে login modal খোলে (`openAuth("flutter")`)।
+- **Clerk ছাড়াও site চলে:** key না থাকলে (`lib/auth-config.ts`) `proxy.ts` no-op থাকে, সবাই signed-out, আর modal জানায় যে sign-in এখনো configure হয়নি।
+- **Clerk Dashboard setup:**
+  - Email address + Email verification code চালু করতে হবে। Password আর name field বন্ধ রাখতে হবে, যাতে sign-up শুধু email-এ শেষ হয়।
+  - Google social connection চালু করতে হবে।
+  - Custom flow-এর জন্য Clerk-এর bot protection (`#clerk-captcha`) modal-এ রাখা আছে।
 
 ---
 
@@ -213,7 +225,7 @@ Admin-এর UI-ও এখনকার DESIGN.md token দিয়ে বান
 - rehype-pretty-code নিজেও ভেতরে Shiki ব্যবহার করে, আর আমাদের এখানে Shiki আগে থেকেই আছে। তাই MDX লাগবে না।
 - **Save করার সময়** Shiki দুই theme-এ (dark/light CSS var) highlight করে HTML DB-তে রাখে।
 - Details page-এর এখনকার সব আচরণ একই থাকবে:
-  - দুই framework-এর code একই grid cell-এ stack করা, `html[data-fw]` দিয়ে দেখানো বা লুকানো, তাই flash বা layout shift নেই।
+  - দুই framework-এর code একই grid cell-এ stack করা, `html[data-fw]` দিয়ে দেখানো বা লুকানো। লুকানো pane-এর height ০, তাই block ঠিক দৃশ্যমান code-এর শেষ লাইন পর্যন্ত থাকে। Load-এর সময় flash হয় না।
   - Copy, Expand/Collapse, Installation (CLI | Manual), Props table, flow-এর বাকি screen।
 
 ---
@@ -267,7 +279,10 @@ Secret কখনো chat বা repo-তে যাবে না।
    বিকল্প: React Native-ও CI-তে Expo web export দিয়ে build করা। তবে তখন grid-এ iframe লাগবে, যা ভারী।
 3. **Flutter update সাথে সাথে আসবে না।** Dart compile-এর জন্য CI লাগে, তাই প্রতিটা Flutter update ~৪–৬ মিনিট পরে live হয়। Admin-এ DartPad দিয়ে draft আগে দেখা যাবে।
 4. **Builder repo public।** Code DB-তে থাকে, কিন্তু build-এর সময় runner-এ নামে। Log-এ print করা যাবে না, আর deploy করা host-এ compiled JS/Wasm যাবেই (web-এ চালাতে হলে এটা এড়ানো যায় না)।
-5. **Pro code-এর সুরক্ষা।** Highlight করা source HTML আর copy শুধু access থাকলে server থেকে পাঠানো হবে। তবে compiled preview (web bundle) সবার browser-এ যায়, তাই সেটা obfuscated/minified রাখা হবে।
+5. **Flutter code-এর সুরক্ষা।**
+   - Source HTML আর copy শুধু signed-in হলে server থেকে পাঠানো হয় (✅ তৈরি)।
+   - তবে Flutter-এর compiled preview (Wasm/JS) সবার browser-এ যায়। Minified হলেও একেবারে ১০০% লুকানো যায় না।
+   - Code DB-তে গেলে (ধাপ A/C) `/api/code` DB থেকে পড়বে, সুরক্ষার নিয়ম একই থাকবে।
 6. **Grid-এর performance।** React Native live render হালকা হলেও শত শত tile একসাথে ভারী। Virtualization (দৃশ্যমান tile ছাড়া unmount) বাধ্যতামূলক।
 
 ---
@@ -278,8 +293,8 @@ Secret কখনো chat বা repo-তে যাবে না।
 |---|---|---|
 | 0 | Minimal Gallery-র pixel-perfect shell, animation, CSS iOS/Android device, Mobbin-style card + carousel, DESIGN.md, CLAUDE.md | ✅ সম্পন্ন |
 | 1 | `/screens/[slug]` details page (Aceternity layout), Shiki code, Flutter/RN toggle, Installation, Props; premium sidebar + mobile sheet; Explore infinite wall | ✅ সম্পন্ন (demo content দিয়ে) |
-| **A** | Drizzle + Neon: schema, migration, seed (demo data + `content/code`), `lib/data.ts`-এর বদলে সব data DB থেকে; `cacheTag`/`revalidateTag` | |
-| **B** | Clerk: নিজস্ব design-এর auth modal, `proxy.ts`, admin role, header-এ account menu | |
+| **A** | Drizzle + Neon: schema, migration, সব data DB থেকে (`lib/content.ts`), `content` tag দিয়ে cache | ✅ সম্পন্ন (2026-09-28)। Demo/mock content মুছে ফেলা হয়েছে, seed হবে না। আসল screen admin থেকে উঠবে |
+| **B** | Clerk: নিজস্ব design-এর auth modal (Email OTP + Google), `proxy.ts`, header/mobile account menu, Flutter code lock + `/api/code` | 🟡 প্রায় সম্পন্ন: key বসিয়ে end-to-end পরীক্ষা আর admin role বাকি |
 | **C** | Admin panel: dashboard, apps, screen editor (meta + Monaco Dart/TSX + upload + props), save/publish, Shiki save-time highlight, version history | |
 | **D** | React Native pipeline: **spike** → server compile → Blob → import map → grid, Explore আর details page-এ আসল React Native render (HTML placeholder বাদ) + virtualization; admin-এ esbuild-wasm live preview | |
 | **E** | Flutter: builder repo, workflow, multi-view host, Vercel rewrite, details page-এ live embed + iframe fallback, build callback; admin-এ DartPad draft preview | |
@@ -288,9 +303,13 @@ Secret কখনো chat বা repo-তে যাবে না।
 
 ---
 
-## 13. যে সিদ্ধান্তগুলো এখনো বাকি
+## 13. সিদ্ধান্ত
 
-1. **Brand name** (এখন `FCult UI` placeholder, `lib/site.ts`-এ এক লাইনে বদলানো যায়)।
-2. **Free vs Pro:** কোন screen-এর code সবার জন্য খোলা থাকবে?
-3. **Sign-in পদ্ধতি:** Email OTP + Google + GitHub, তিনটাই রাখব?
-4. শুরুর জন্য দরকার: Neon `DATABASE_URL` আর Clerk-এর key দুটো, **`.env.local`-এ** (chat-এ নয়)।
+✅ নেওয়া হয়েছে:
+- Brand: **F-Cult UI**
+- React Native code free, Flutter code login করে (free account)
+- Sign-in: Email OTP + Google
+
+⏳ শুরুর জন্য দরকার (`.env.local`-এ, chat-এ নয়):
+- Neon `DATABASE_URL` (ধাপ A)
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` (ধাপ B-এর end-to-end পরীক্ষা)

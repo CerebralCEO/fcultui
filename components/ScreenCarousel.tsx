@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { AnimatePresence, motion, type PanInfo, type Variants } from "framer-motion";
-import type { ScreenDesign } from "@/lib/data";
+import type { FlowStep } from "@/lib/content-types";
 import { Device, SCREEN_H, SCREEN_W, useDeviceScale, type Platform } from "./device/Device";
-import { screenRegistry } from "./screens";
+import ScreenView from "./device/ScreenView";
 import { ArrowRightIcon } from "./icons";
 
 /*
@@ -51,7 +51,7 @@ type Props = {
   id: string;
   href: string;
   label: string;
-  flow: ScreenDesign[];
+  flow: FlowStep[];
   platform: Platform;
   playing: boolean;
   accent: string;
@@ -76,7 +76,7 @@ export default function ScreenCarousel({ id, href, label, flow, platform, playin
     else if (swipe > 60) go(index - 1);
   };
 
-  const { tone, Component } = screenRegistry[flow[index]];
+  const step = flow[index];
 
   return (
     <div
@@ -122,8 +122,8 @@ export default function ScreenCarousel({ id, href, label, flow, platform, playin
                 onDragEnd={onDragEnd}
               >
                 <div style={{ transform: `scale(${s})`, transformOrigin: "0 0" }}>
-                  <Device bare platform={platform} tone={tone} playing={playing} accent={accent}>
-                    <Component />
+                  <Device bare platform={platform} tone={step.tone} playing={playing} accent={accent}>
+                    <ScreenView step={step} />
                   </Device>
                 </div>
               </motion.div>

@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { BookmarkIcon, CloseIcon, MoonIcon, SunIcon } from "./icons";
 import { useApp } from "./Providers";
+import { useAuthState } from "./auth/AuthProvider";
 import { modeForPath } from "./Header";
 
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -25,6 +26,7 @@ const site = [
 export default function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
   const { theme, setTheme, openSearch } = useApp();
+  const { signedIn, user, openAuth, signOut } = useAuthState();
 
   // Close on navigation (runs only when the path actually changes)
   useEffect(() => {
@@ -94,6 +96,27 @@ export default function MobileMenu({ open, onClose }: { open: boolean; onClose: 
                     ))}
                   </ul>
                 </nav>
+                <div className="mobile-menu-account">
+                  {signedIn && user ? (
+                    <>
+                      <span>
+                        <strong>{user.name}</strong>
+                        <em>{user.email}</em>
+                      </span>
+                      <button onClick={() => void signOut()}>Sign out</button>
+                    </>
+                  ) : (
+                    <button
+                      className="mobile-menu-signin"
+                      onClick={() => {
+                        onClose();
+                        openAuth();
+                      }}
+                    >
+                      Sign in — unlock Flutter code
+                    </button>
+                  )}
+                </div>
                 <div className="mobile-menu-site">
                   <div className="mobile-menu-secondary">
                     <span className="label">Site</span>

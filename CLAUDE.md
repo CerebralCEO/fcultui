@@ -1,8 +1,8 @@
 @AGENTS.md
 
-# FCult UI — project rules
+# F-Cult UI — project rules
 
-FCult UI is a gallery of ready-to-ship mobile screens. Every screen ships with Flutter **and** React Native code that
+F-Cult UI is a gallery of ready-to-ship mobile screens. Every screen ships with Flutter **and** React Native code that
 produces identical UI. The web shell is a pixel-exact port of minimal.gallery (Next.js 16 App Router, React 19, Framer
 Motion, GSAP, Lenis, Tailwind v4 utilities without preflight).
 
@@ -37,27 +37,42 @@ Motion, GSAP, Lenis, Tailwind v4 utilities without preflight).
   localStorage). Never make either a per-card setting. The code page must read the same `framework` value.
 - Screen animations must be declared only under `.device[data-playing]` so previews replay on hover. Playback is
   triggered by `usePlayback` in `components/ScreenCards.tsx` (hover on pointer devices, centred-in-view on touch).
-- The HTML screens in `components/screens/` are placeholders until live React Native web renders (grid) and the Flutter
-  multi-view host (details page) replace them — see `docs/PLAN.md`. No screenshots or videos, ever.
+- Every screen renders through `components/device/ScreenView.tsx`. Until the live React Native web render (step D) and
+  Flutter multi-view host (step E) exist, it shows a neutral "Live preview is building" surface. No mock UI, screenshots
+  or videos, ever.
 
 ## Screen source code & detail page
-- Source of truth: `content/code/<design>/screen.dart` + `Screen.tsx` (plus `_shared/tokens.*`). Placeholders
-  `__NAME__`, `__TITLE__`, `__ACCENT__` are filled per screen by `lib/code.ts`, which also Shiki-highlights at build time.
-  `content/` is excluded from the site's tsconfig/eslint — it is Flutter/Expo code, not Next.js code.
+- **All content lives in Neon** (Drizzle schema in `db/schema.ts`, migrations in `db/migrations`, `pnpm db:generate` /
+  `pnpm db:migrate`). An app (`apps`) is one gallery card and one `/screens/<app-slug>` page. Its `screens` (ordered by
+  `position`) are the flow steps, and each has `screen_sources` (flutter / rn files, usage, deps) and `screen_props`.
+  Only `status = 'live'` screens are public.
+- Read content only through `lib/content.ts` (`getScreens`, `getCategories`, `getScreen`). It is server-only, cached under
+  the `content` tag in production (the admin must `revalidateTag("content")` after a publish), and uncached in `next dev`.
+  Client components receive content as props. `lib/code.ts` turns sources into highlighted `CodeFile`s.
 - Both implementations of a design must stay pixel- and timing-identical (same tokens, same durations/easings).
 - `/screens/[slug]` lives in the `app/screens/(detail)/` route group: `layout.tsx` holds the persistent rail + mobile
   bar/sheet (`components/detail/ScreenNav.tsx`), `template.tsx` animates the article. Anything `position: fixed`
   under page transitions must be portalled to `document.body` (ancestors carry transforms).
-- `/screens/[slug]` is fully static (`generateStaticParams`). Per-design copy, tags, RN deps and props live in
-  `lib/screen-meta.ts`.
+- `/screens/[slug]` prerenders every published app (`generateStaticParams` from the DB); new slugs render on demand.
+  Flutter lock keys are `s<i>-source` / `s<i>-usage` (`flutterKey()` in `lib/code.ts`).
 - Framework-dependent code renders both panes; visibility is driven by `html[data-fw]` (set before paint by the boot
-  script and by `setFramework`). Never switch code by conditional rendering — it would flash and shift layout.
+  script and by `setFramework`). Never switch code by conditional rendering — it would flash on load. The inactive pane
+  is `height: 0`, so each block is exactly as tall as the visible file.
+
+## Auth & code access
+- Clerk (v7 signal API) drives auth; **all auth UI is ours** (`components/auth/AuthModal.tsx`). Never render Clerk's
+  prebuilt `<SignIn/>` components. Methods: Email OTP + Google only.
+- Access rule: **React Native code is public; Flutter code is members-only.** Flutter source must never be embedded in
+  page HTML — pages ship `LockedFile` stubs (`lib/code-types.ts`), and the real files come from `/api/code/[slug]`
+  after `auth()`. Any new Flutter code surface must go through `useFlutterCode()` / `CodeBlock`.
+- Everything must keep working without Clerk keys (`lib/auth-config.ts`): no ClerkProvider, proxy is a no-op,
+  everyone is signed out.
 
 ## Explore wall
 - `/explore` (the old `/templates`, redirected in `next.config.ts`) is immersive: `Header`, `Footer` return null there,
   Lenis is stopped, and `ExploreWall` portals a fixed wall to `<body>`. Its scroll is a custom infinite engine on the
   GSAP ticker (refs + direct transforms — never React state per frame).
-- Every screen of every flow is a tile; links go to `/screens/<slug>` (`#flow` for non-cover screens).
+- Every screen of every flow is a tile; links go to `/screens/<slug>` (`?screen=<i>` for non-cover screens, which selects that screen in the detail page's flow strip).
 
 ## Motion
 - Reveals use GSAP with `expo.out` / `--ease-out-expo` `cubic-bezier(0.16,1,0.3,1)`, 1.1–1.25s, always inside

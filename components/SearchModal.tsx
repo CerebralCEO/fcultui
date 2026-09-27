@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { appKits, screens, searchMenus, slug, tools, type SearchMode } from "@/lib/data";
+import { slug, toolsMenu, tools, type SearchMode } from "@/lib/data";
+import type { Screen } from "@/lib/content-types";
 import { ChevronsUpDownIcon, CloseIcon, DotsIcon, SearchIcon } from "./icons";
 import { useApp } from "./Providers";
 import FadeImg from "./FadeImg";
@@ -15,16 +16,44 @@ const base = (m: SearchMode) => (m === "templates" ? "/explore" : `/${m}`);
 
 type Result = { title: string; thumb?: string; swatch?: string; meta?: string; href?: string };
 
-function resultsFor(mode: SearchMode, q: string): Result[] {
+type Menu = { label: string; items: [name: string, count: number][] };
+
+/** Category menus built from live content (screens: apps per category, explore: screens per category). */
+function contentMenus(screens: Screen[]): Record<SearchMode, Menu> {
+  const count = (weight: (s: Screen) => number) => {
+    const m = new Map<string, number>();
+    screens.forEach((s) => m.set(s.category, (m.get(s.category) ?? 0) + weight(s)));
+    return [...m].sort(([a], [b]) => a.localeCompare(b));
+  };
+  return {
+    screens: { label: "Categories", items: count(() => 1) },
+    templates: { label: "Categories", items: count((s) => s.flow.length) },
+    tools: toolsMenu,
+  };
+}
+
+function resultsFor(mode: SearchMode, q: string, screens: Screen[]): Result[] {
   const has = (s: string) => s.toLowerCase().includes(q);
   if (mode === "screens")
-    return screens.filter((s) => has(s.title) || has(s.category)).map((s) => ({ title: s.title, swatch: s.accent, meta: s.category, href: `/screens/${s.slug}` }));
+    return screens
+      .filter((s) => has(s.title) || has(s.category) || has(s.tagline))
+      .map((s) => ({ title: s.title, swatch: s.accent, meta: s.category, href: `/screens/${s.slug}` }));
   if (mode === "templates")
-    return appKits.filter((k) => has(k.title) || has(k.category)).map((k) => ({ title: k.title, swatch: k.accent, meta: k.category }));
+    return screens.flatMap((s) =>
+      s.flow
+        .map((step, i) => ({ step, i }))
+        .filter(({ step }) => has(step.title) || has(step.label) || has(s.category))
+        .map(({ step, i }) => ({
+          title: step.title,
+          swatch: s.accent,
+          meta: `${s.title} · ${step.label}`,
+          href: i === 0 ? `/screens/${s.slug}` : `/screens/${s.slug}?screen=${i}`,
+        })),
+    );
   return tools.filter((t) => has(t.title) || has(t.category)).map((t) => ({ title: t.title, thumb: t.icon, meta: t.category }));
 }
 
-export default function SearchModal() {
+export default function SearchModal({ screens }: { screens: Screen[] }) {
   const { searchOpen, closeSearch, searchMode, openSearch } = useApp();
   const [query, setQuery] = useState("");
   const [modeMenu, setModeMenu] = useState(false);
@@ -57,9 +86,10 @@ export default function SearchModal() {
   }, [searchOpen, modeMenu, closeSearch]);
 
   const q = query.trim().toLowerCase();
-  const menu = searchMenus[searchMode];
+  const menus = useMemo(() => contentMenus(screens), [screens]);
+  const menu = menus[searchMode];
   const tagHits = useMemo(() => (q ? menu.items.filter(([n]) => n.toLowerCase().includes(q)) : []), [q, menu]);
-  const postHits = useMemo(() => (q ? resultsFor(searchMode, q) : []), [q, searchMode]);
+  const postHits = useMemo(() => (q ? resultsFor(searchMode, q, screens) : []), [q, searchMode, screens]);
 
   return (
     <AnimatePresence>
