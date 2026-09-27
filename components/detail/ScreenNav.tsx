@@ -9,6 +9,57 @@ import { screens, type Screen } from "@/lib/data";
 import { site } from "@/lib/site";
 import { ArrowRightIcon, CloseIcon, LockIcon, SearchIcon } from "../icons";
 import { getLenis } from "../SmoothScroll";
+import { ScaledDevice } from "../device/Device";
+import { screenRegistry } from "../screens";
+import { useApp } from "../Providers";
+
+const PEEK_H = 440;
+
+/** Floating live preview beside the rail — follows the hovered item with a spring. */
+function NavPeek({ peek }: { peek: { s: Screen; y: number; x: number } | null }) {
+  const { platform } = useApp();
+  return (
+    <AnimatePresence>
+      {peek && (
+        <motion.div
+          className="nav-peek"
+          style={{ left: peek.x }}
+          initial={{ opacity: 0, x: -10, scale: 0.96, filter: "blur(6px)", top: peek.y }}
+          animate={{ opacity: 1, x: 0, scale: 1, filter: "blur(0px)", top: peek.y }}
+          exit={{ opacity: 0, x: -8, scale: 0.97, filter: "blur(4px)", transition: { duration: 0.18 } }}
+          transition={{ type: "spring", stiffness: 360, damping: 34, opacity: { duration: 0.2 }, filter: { duration: 0.25 } }}
+          aria-hidden
+        >
+          <div className="nav-peek-screen">
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.div
+                key={peek.s.slug}
+                className="nav-peek-slide"
+                initial={{ opacity: 0, y: 14, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -14, scale: 0.97 }}
+                transition={{ type: "spring", stiffness: 420, damping: 36 }}
+              >
+                {(() => {
+                  const { tone, Component } = screenRegistry[peek.s.design];
+                  return (
+                    <ScaledDevice bare platform={platform} tone={tone} playing accent={peek.s.accent} fit={1}>
+                      <Component />
+                    </ScaledDevice>
+                  );
+                })()}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+          <div className="nav-peek-meta">
+            <strong>{peek.s.title}</strong>
+            <span>{peek.s.tagline}</span>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
 
 const GUIDE = [
   { href: "/about", label: "Introduction" },
@@ -37,18 +88,47 @@ const GridIcon = () => (
   </svg>
 );
 
+const I = ({ d }: { d: React.ReactNode }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    {d}
+  </svg>
+);
+const GUIDE_ICONS: Record<string, React.ReactNode> = {
+  "/about": <I d={<><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></>} />,
+  "/screens": <I d={<><rect x="5" y="2" width="14" height="20" rx="3" /><path d="M10 18h4" /></>} />,
+  "/templates": <I d={<><path d="m12 2 9 5-9 5-9-5 9-5Z" /><path d="m3 12 9 5 9-5" /><path d="m3 17 9 5 9-5" /></>} />,
+  "/tools": <I d={<><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4 2.5-2.5Z" /></>} />,
+};
+
+type PeekHandlers = { onPeek?: (s: Screen, el: HTMLElement) => void; onPeekEnd?: () => void };
+
 /**
  * The screen list shared by the desktop rail and the mobile sheet.
- * `pillId` scopes the sliding active pill — the rail lives in a persistent layout, so the pill glides
- * from item to item as you navigate.
+ * `pillId` scopes the sliding active pill — the rail lives in a persistent layout, so the pill (and its
+ * marker on the tree guide) glides from item to item as you navigate.
  */
-function ScreenList({ active, pillId, onNavigate }: { active: string; pillId: string; onNavigate?: () => void }) {
+function ScreenList({
+  active,
+  pillId,
+  onNavigate,
+  onPeek,
+  onPeekEnd,
+}: { active: string; pillId: string; onNavigate?: () => void } & PeekHandlers) {
   const [query, setQuery] = useState("");
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const q = query.trim().toLowerCase();
   const groups = useMemo(
     () => groupByCategory(q ? screens.filter((s) => `${s.title} ${s.category} ${s.tagline}`.toLowerCase().includes(q)) : screens),
     [q],
   );
+
+  const toggle = (category: string) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
 
   return (
     <>
@@ -70,8 +150,9 @@ function ScreenList({ active, pillId, onNavigate }: { active: string; pillId: st
           <ul>
             {GUIDE.map((g) => (
               <li key={g.href}>
-                <Link href={g.href} className="nav-link" onClick={onNavigate}>
-                  {g.label}
+                <Link href={g.href} className="nav-link nav-guide" onClick={onNavigate}>
+                  <span className="nav-guide-icon">{GUIDE_ICONS[g.href]}</span>
+                  <span className="nav-title">{g.label}</span>
                 </Link>
               </li>
             ))}
@@ -79,42 +160,66 @@ function ScreenList({ active, pillId, onNavigate }: { active: string; pillId: st
         </div>
       )}
 
-      <div className="nav-section">
-        <p className="nav-heading">Screens</p>
+      <div className="nav-section" onMouseLeave={onPeekEnd}>
+        <p className="nav-heading">
+          Screens <span>{screens.length}</span>
+        </p>
         {groups.length === 0 && <p className="nav-empty">No screens match “{query}”.</p>}
-        {groups.map(([category, items]) => (
-          <div key={category} className="nav-group">
-            <p className="nav-category">{category}</p>
-            <ul>
-              {items.map((s) => {
-                const isActive = s.slug === active;
-                return (
-                  <li key={s.slug}>
-                    <Link
-                      href={`/screens/${s.slug}`}
-                      className={`nav-link${isActive ? " active" : ""}`}
-                      aria-current={isActive ? "page" : undefined}
-                      data-active={isActive || undefined}
-                      onClick={onNavigate}
-                    >
-                      {isActive && (
-                        <motion.span layoutId={pillId} className="nav-pill" transition={{ type: "spring", stiffness: 420, damping: 38 }} />
-                      )}
-                      <i className="nav-dot" style={{ background: s.accent }} />
-                      <span className="nav-title">{s.title}</span>
-                      {s.pro && (
-                        <span className="nav-lock" title="All-Access">
-                          <LockIcon />
-                        </span>
-                      )}
-                      {s.badge && <em className={`nav-badge ${s.badge.toLowerCase()}`}>{s.badge}</em>}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
+        {groups.map(([category, items]) => {
+          const open = q !== "" || !collapsed.has(category);
+          return (
+            <div key={category} className="nav-group">
+              <button className="nav-category" onClick={() => toggle(category)} aria-expanded={open}>
+                <span>{category}</span>
+                <em>{items.length}</em>
+                <ChevronDown />
+              </button>
+              <AnimatePresence initial={false}>
+                {open && (
+                  <motion.ul
+                    className="nav-tree"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ height: { type: "spring", stiffness: 380, damping: 40 }, opacity: { duration: 0.2 } }}
+                  >
+                    {items.map((s) => {
+                      const isActive = s.slug === active;
+                      return (
+                        <li key={s.slug}>
+                          <Link
+                            href={`/screens/${s.slug}`}
+                            className={`nav-link${isActive ? " active" : ""}`}
+                            aria-current={isActive ? "page" : undefined}
+                            data-active={isActive || undefined}
+                            onClick={() => {
+                              onPeekEnd?.();
+                              onNavigate?.();
+                            }}
+                            onMouseEnter={(e) => onPeek?.(s, e.currentTarget)}
+                            onFocus={(e) => onPeek?.(s, e.currentTarget)}
+                            onBlur={onPeekEnd}
+                          >
+                            {isActive && (
+                              <motion.span layoutId={pillId} className="nav-pill" transition={{ type: "spring", stiffness: 420, damping: 38 }} />
+                            )}
+                            <span className="nav-title">{s.title}</span>
+                            {s.pro && (
+                              <span className="nav-lock" title="All-Access">
+                                <LockIcon />
+                              </span>
+                            )}
+                            {s.badge && <em className={`nav-badge ${s.badge.toLowerCase()}`}>{s.badge}</em>}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </motion.ul>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
       </div>
     </>
   );
@@ -147,6 +252,33 @@ export default function ScreenNav() {
   const [sheet, setSheet] = useState(false);
   const [mounted, setMounted] = useState(false);
   const drag = useDragControls();
+  const [peek, setPeek] = useState<{ s: Screen; y: number; x: number } | null>(null);
+  const peekTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const peeking = useRef(false);
+
+  const showPeek = (s: Screen, el: HTMLElement) => {
+    if (!window.matchMedia("(hover: hover) and (min-width: 992px)").matches) return;
+    clearTimeout(peekTimer.current);
+    const r = el.getBoundingClientRect();
+    const rail = railRef.current?.getBoundingClientRect();
+    if (!rail) return;
+    const header = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header--height")) || 72;
+    const y = Math.min(Math.max(r.top + r.height / 2 - PEEK_H / 2, header + 12), window.innerHeight - PEEK_H - 12);
+    const apply = () => {
+      peeking.current = true;
+      setPeek({ s, y, x: rail.right + 16 });
+    };
+    // First reveal waits a beat (no flicker while the pointer passes through); after that it follows instantly
+    if (peeking.current) apply();
+    else peekTimer.current = setTimeout(apply, 220);
+  };
+  const hidePeek = () => {
+    clearTimeout(peekTimer.current);
+    peekTimer.current = setTimeout(() => {
+      peeking.current = false;
+      setPeek(null);
+    }, 140);
+  };
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
@@ -184,8 +316,8 @@ export default function ScreenNav() {
     <>
       {/* ---------- Desktop rail ---------- */}
       <aside className="detail-sidebar">
-        <div className="detail-sidebar-scroll" ref={railRef} data-lenis-prevent>
-          <ScreenList active={active} pillId="rail-pill" />
+        <div className="detail-sidebar-scroll" ref={railRef} data-lenis-prevent onScroll={() => peek && hidePeek()}>
+          <ScreenList active={active} pillId="rail-pill" onPeek={showPeek} onPeekEnd={hidePeek} />
           <Promo />
         </div>
       </aside>
@@ -223,6 +355,8 @@ export default function ScreenNav() {
           )}
         </div>
       </div>
+
+      {mounted && createPortal(<NavPeek peek={peek} />, document.body)}
 
       {/* ---------- Mobile sheet (portalled: ancestors are transformed by page transitions) ---------- */}
       {mounted &&

@@ -514,14 +514,18 @@ Gallery cards follow Mobbin's anatomy: **tile, then meta row**.
 This page follows the Aceternity component-page anatomy, built only from FCult tokens:
 - **Grid**: a `264px` sticky left rail, then `.detail-body`. The body contains the content column (max 880px, **centred** with `justify-self: center` so the gaps on both sides stay equal) and a `190px` "On this page" TOC at 1300px and above. The body starts 56px after the rail, with a 48px gap before the TOC. Below 992px only the content column remains.
 - **Persistent shell**: the rail lives in `app/screens/(detail)/layout.tsx`, so it never remounts between screens (it keeps its scroll position, and the active pill springs from item to item). The article fades and rises 14px (0.6s expo) via `(detail)/template.tsx`.
-- **Left rail** (`.detail-sidebar`, cult-ui inspired):
+- **Left rail** (`.detail-sidebar`, cult-ui inspired, **no colour dots**):
   - Content is masked with 22px/36px fades at the top and bottom, and the rail has a hairline right border.
   - At the top, a `nav-filter` (38px, radius 10, live filtering, screen count kbd).
-  - A **"GET STARTED"** section, then **"SCREENS"**. Section headings are 12px/510 uppercase with 0.1em tracking, in ink.
-  - **Category** headings are 16px/510 ink.
-  - Items are 14.5px `{colors.body}` with a 6px accent dot and an 8px radius. On hover a `{colors.surface}` wash fades in.
-  - The active item gets a **framer `layoutId` pill** (`{colors.surface-25}` + 1px `hairline-strong` inset ring, spring 420/38).
-  - Badges are 11px/510, 6px radius, dark text: **New** uses `{colors.badge-new}` and **Updated** uses `{colors.badge-updated}`. Pro screens show a 12px lock.
+  - A **GET STARTED** section: 16px line icons in `{colors.muted}` that turn ink on hover.
+  - A **SCREENS** section with a count chip. Section headings are 12px/510 uppercase with 0.1em tracking, in ink.
+  - **Category = collapsible header**: 16px/510 ink, then a 12px muted count and a 14px chevron. The chevron rotates −90° when collapsed (0.45s expo), and the group height springs (380/40).
+  - Items (14.5px `{colors.body}`) hang off a **1px `hairline-strong` tree guide**. On hover a `{colors.surface}` wash fades in and the title nudges 2px right.
+  - The active item gets a **framer `layoutId` pill** (gradient `surface-25` → `surface`, 1px `hairline-strong` inset ring, spring 420/38). Its title is 510, and a **2px ink marker with a soft glow sits on the guide** and travels with the pill.
+  - **Badges are tinted glass**: 11px/510, 6px radius, text in the badge colour on a 12% fill with a 30% inset ring. **New** uses `{colors.badge-new}` and **Updated** uses `{colors.badge-updated}`; in light mode the text darkens 55%. Pro screens show a 12px muted lock.
+  - **Hover peek** (pointer devices ≥992px): a 188px glass card appears 16px to the right of the rail with a live frameless preview (364px tall) plus title and tagline.
+    - The first reveal waits 220ms, then the card follows the hovered item vertically with a spring (360/34). Screens swap inside it with a 14px rise.
+    - It closes 140ms after the pointer leaves the list or the rail scrolls. It is portalled to `<body>`.
   - The lime All-Access card closes the rail.
 - **Mobile (<992px)**:
   - A sticky, blurred **screen bar** sits under the header. It holds a 50px button (grid icon, category over title, chevron) that opens the sheet, plus 42px previous/next step buttons.
