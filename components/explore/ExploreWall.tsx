@@ -141,7 +141,14 @@ const WallTile = memo(function WallTile({
         </Device>
       </div>
       <span className="wall-meta">
-        <i style={{ "--accent": tile.screen.accent } as React.CSSProperties}>{tile.screen.title[0]}</i>
+        <i className={tile.screen.logo ? "has-logo" : undefined} style={{ "--accent": tile.screen.accent } as React.CSSProperties}>
+          {tile.screen.logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={tile.screen.logo} alt="" />
+          ) : (
+            tile.screen.title[0]
+          )}
+        </i>
         <span>
           <strong>{tile.title}</strong>
           <em>{tile.screen.category}</em>

@@ -9,6 +9,7 @@ import FrameworkSwitch from "./FrameworkSwitch";
 import { useApp } from "./Providers";
 import { useAuthState } from "./auth/AuthProvider";
 import ScreenCarousel from "./ScreenCarousel";
+import FadeImg from "./FadeImg";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -124,11 +125,11 @@ function TileBadges({ badge }: { badge?: string }) {
   );
 }
 
-function AppMeta({ title, tagline, accent, href }: { title: string; tagline: string; accent: string; href: string }) {
+function AppMeta({ title, tagline, accent, logo, href }: { title: string; tagline: string; accent: string; logo: string | null; href: string }) {
   return (
     <div className="app-meta">
-      <Link href={href} className="app-icon" style={{ "--accent": accent } as React.CSSProperties} aria-hidden tabIndex={-1}>
-        {title[0]}
+      <Link href={href} className={`app-icon${logo ? " has-logo" : ""}`} style={{ "--accent": accent } as React.CSSProperties} aria-hidden tabIndex={-1}>
+        {logo ? <FadeImg src={logo} alt="" /> : title[0]}
       </Link>
       <div className="app-meta-text">
         <h3>
@@ -161,7 +162,7 @@ export function ScreenCard({ screen }: { screen: Screen }) {
         <TileBadges badge={screen.badge} />
         <TileBar slug={screen.slug} saveId={`s-${screen.slug}`} codeHref={`/screens/${screen.slug}#code`} />
       </div>
-      <AppMeta title={screen.title} tagline={screen.tagline} accent={screen.accent} href={`/screens/${screen.slug}`} />
+      <AppMeta title={screen.title} tagline={screen.tagline} accent={screen.accent} logo={screen.logo} href={`/screens/${screen.slug}`} />
     </div>
   );
 }

@@ -119,6 +119,8 @@ export default function ScreenEditor({
         <nav className="crumbs" aria-label="Breadcrumb">
           <Link href="/admin">Admin</Link>
           <span>/</span>
+          <Link href="/admin/apps">Apps</Link>
+          <span>/</span>
           <Link href={`/admin/apps/${app.id}`}>{app.name}</Link>
           <span>/</span>
           <strong>{v.label || "Screen"}</strong>

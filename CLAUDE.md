@@ -75,6 +75,9 @@ Motion, GSAP, Lenis, Tailwind v4 utilities without preflight).
 - Admin reads go through `lib/admin-queries.ts` (uncached, includes Flutter source). Mutations are server actions that
   highlight code with Shiki at save time and call `updateTag("content")` so the public site updates at once.
 - Publishing a screen requires both Flutter and React Native source. Only `live` screens are public.
+- App logos live in the `logos` table (base64, ≤256px WebP or SVG) and are served by `/api/logos/[id]` (immutable cache,
+  strict CSP). `apps.logo_id` points at one. There is no manual colour field: `apps.accent` is the logo's dominant colour,
+  extracted in the browser on upload (`components/admin/LogoPicker.tsx`). Without a logo the UI falls back to the accent monogram.
 - The UI reuses the site shell: `.detail` grid + `.detail-sidebar` rail with `.nav-*` classes, auth-style inputs,
   `.tool-btn` / `Segmented` controls, `.admin-*` classes in `app/globals.css`. Monaco (`@monaco-editor/react`, CDN)
   is themed to `--color--code-background`.

@@ -14,6 +14,7 @@ const I = ({ d }: { d: React.ReactNode }) => (
 
 const WORKSPACE = [
   { href: "/admin", label: "Dashboard", icon: <I d={<><rect x="3" y="3" width="7" height="9" rx="2" /><rect x="14" y="3" width="7" height="5" rx="2" /><rect x="14" y="12" width="7" height="9" rx="2" /><rect x="3" y="16" width="7" height="5" rx="2" /></>} /> },
+  { href: "/admin/apps", label: "Apps", icon: <I d={<><rect x="3" y="4" width="18" height="16" rx="3" /><path d="M3 10h18" /><path d="M9 10v10" /></>} /> },
   { href: "/admin/apps/new", label: "New app", icon: <I d={<><path d="M12 5v14" /><path d="M5 12h14" /></>} /> },
   { href: "/", label: "View site", icon: <I d={<><path d="M7 17 17 7" /><path d="M7 7h10v10" /></>} /> },
 ];
@@ -70,7 +71,10 @@ export default function AdminNav({ apps, me }: { apps: AdminApp[]; me: { name: s
             {apps.map((a) => (
               <div key={a.id} className="nav-group">
                 <Link href={`/admin/apps/${a.id}`} className={`nav-category admin-app-link${isActive(`/admin/apps/${a.id}`) ? " active" : ""}`}>
-                  <i className="admin-swatch" style={{ "--accent": a.accent } as React.CSSProperties} />
+                  <i className={`admin-swatch${a.logoId ? " has-logo" : ""}`} style={{ "--accent": a.accent } as React.CSSProperties}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {a.logoId && <img src={`/api/logos/${a.logoId}`} alt="" />}
+                  </i>
                   <span>{a.name}</span>
                   <em>{a.screens.length}</em>
                 </Link>
@@ -97,7 +101,7 @@ export default function AdminNav({ apps, me }: { apps: AdminApp[]; me: { name: s
 
       {/* Phones / tablets: one swipeable row instead of the rail */}
       <nav className="admin-mobile-nav" aria-label="Admin">
-        {WORKSPACE.slice(0, 2).map((w) => (
+        {WORKSPACE.slice(0, 3).map((w) => (
           <Link key={w.href} href={w.href} className={isActive(w.href) ? "active" : undefined}>
             {w.label}
           </Link>

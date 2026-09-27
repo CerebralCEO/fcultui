@@ -37,7 +37,7 @@ function resultsFor(mode: SearchMode, q: string, screens: Screen[]): Result[] {
   if (mode === "screens")
     return screens
       .filter((s) => has(s.title) || has(s.category) || has(s.tagline))
-      .map((s) => ({ title: s.title, swatch: s.accent, meta: s.category, href: `/screens/${s.slug}` }));
+      .map((s) => ({ title: s.title, thumb: s.logo ?? undefined, swatch: s.accent, meta: s.category, href: `/screens/${s.slug}` }));
   if (mode === "templates")
     return screens.flatMap((s) =>
       s.flow
@@ -45,6 +45,7 @@ function resultsFor(mode: SearchMode, q: string, screens: Screen[]): Result[] {
         .filter(({ step }) => has(step.title) || has(step.label) || has(s.category))
         .map(({ step, i }) => ({
           title: step.title,
+          thumb: s.logo ?? undefined,
           swatch: s.accent,
           meta: `${s.title} · ${step.label}`,
           href: i === 0 ? `/screens/${s.slug}` : `/screens/${s.slug}?screen=${i}`,

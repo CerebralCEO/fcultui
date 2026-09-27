@@ -20,6 +20,8 @@ export type Screen = {
   category: string;
   tagline: string;
   accent: string;
+  /** App logo URL (/api/logos/<id>); null falls back to the accent monogram. */
+  logo: string | null;
   badge?: "New" | "Updated";
   flow: FlowStep[];
 };

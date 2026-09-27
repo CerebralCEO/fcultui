@@ -40,6 +40,7 @@ async function loadScreens(): Promise<Screen[]> {
         category: a.category,
         tagline: a.tagline || cover.tagline,
         accent: a.accent,
+        logo: a.logoId ? `/api/logos/${a.logoId}` : null,
         badge: cover.badge ? badgeLabel[cover.badge] : undefined,
         flow: a.screens.map(
           (s): FlowStep => ({ slug: s.slug, label: s.label, title: s.title, tone: s.tone, bundleUrl: null }),
@@ -134,6 +135,7 @@ async function loadScreen(slug: string): Promise<ScreenDetail | null> {
     category: app.category,
     tagline: app.tagline || cover.tagline,
     accent: app.accent,
+    logo: app.logoId ? `/api/logos/${app.logoId}` : null,
     badge: cover.badge ? badgeLabel[cover.badge] : undefined,
     description: cover.description || app.tagline,
     tags: [...new Set(steps.flatMap((s) => s.tags))],

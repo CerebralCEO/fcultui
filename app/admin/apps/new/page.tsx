@@ -12,6 +12,8 @@ export default async function NewAppPage() {
         <nav className="crumbs" aria-label="Breadcrumb">
           <Link href="/admin">Admin</Link>
           <span>/</span>
+          <Link href="/admin/apps">Apps</Link>
+          <span>/</span>
           <strong>New app</strong>
         </nav>
         <h1>New app</h1>

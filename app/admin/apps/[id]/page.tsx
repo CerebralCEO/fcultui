@@ -18,6 +18,8 @@ export default async function AdminAppPage({ params }: PageProps<"/admin/apps/[i
         <nav className="crumbs" aria-label="Breadcrumb">
           <Link href="/admin">Admin</Link>
           <span>/</span>
+          <Link href="/admin/apps">Apps</Link>
+          <span>/</span>
           <strong>{app.name}</strong>
         </nav>
         <div className="admin-head-row">
@@ -42,7 +44,7 @@ export default async function AdminAppPage({ params }: PageProps<"/admin/apps/[i
         <h2>Details</h2>
         <AppForm
           key={app.id}
-          app={{ id: app.id, name: app.name, slug: app.slug, category: app.category, accent: app.accent, tagline: app.tagline }}
+          app={{ id: app.id, name: app.name, slug: app.slug, category: app.category, accent: app.accent, tagline: app.tagline, logoId: app.logoId }}
           categories={[...new Set(all.map((a) => a.category))]}
         />
       </section>

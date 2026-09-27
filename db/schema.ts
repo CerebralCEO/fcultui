@@ -27,12 +27,27 @@ const timestamps = {
     .$onUpdate(() => new Date()),
 };
 
+/** App logo library: uploaded images (≤256px WebP/PNG/SVG, base64) served by /api/logos/[id]. */
+export const logos = pgTable("logos", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  /** Space-separated search keywords. */
+  keywords: text("keywords").notNull().default(""),
+  mime: text("mime").notNull(),
+  data: text("data").notNull(),
+  /** Dominant colour, used as the app accent when this logo is picked. */
+  accent: text("accent").notNull().default("#6D5DF6"),
+  source: text("source").notNull().default("upload"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const apps = pgTable("apps", {
   id: serial("id").primaryKey(),
   slug: text("slug").notNull().unique(),
   name: text("name").notNull(),
   category: text("category").notNull(),
   accent: text("accent").notNull().default("#6D5DF6"),
+  logoId: integer("logo_id").references(() => logos.id, { onDelete: "set null" }),
   tagline: text("tagline").notNull().default(""),
   position: integer("position").notNull().default(0),
   ...timestamps,
@@ -116,7 +131,10 @@ export const screenTags = pgTable(
 );
 
 /* Relations (for db.query.*) */
-export const appsRelations = relations(apps, ({ many }) => ({ screens: many(screens) }));
+export const appsRelations = relations(apps, ({ one, many }) => ({
+  screens: many(screens),
+  logo: one(logos, { fields: [apps.logoId], references: [logos.id] }),
+}));
 export const screensRelations = relations(screens, ({ one, many }) => ({
   app: one(apps, { fields: [screens.appId], references: [apps.id] }),
   sources: many(screenSources),

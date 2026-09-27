@@ -1,9 +1,9 @@
 "use server";
 
 import { revalidatePath, updateTag } from "next/cache";
-import { and, eq, inArray, max, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, max, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { apps, screenProps, screenSources, screens, screenTags, tags } from "@/db/schema";
+import { apps, logos, screenProps, screenSources, screens, screenTags, tags } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
 import { highlight } from "@/lib/code";
 import type { Lang } from "@/lib/code-types";
@@ -38,7 +38,8 @@ const need = () => {
 /* Apps                                                                */
 /* ------------------------------------------------------------------ */
 
-export type AppInput = { name: string; slug: string; category: string; accent: string; tagline: string };
+/** `accent` is derived from the logo (dominant colour) — there is no manual colour field. */
+export type AppInput = { name: string; slug: string; category: string; accent: string; tagline: string; logoId: number | null };
 
 function cleanApp(input: AppInput): AppInput | string {
   const name = input.name.trim();
@@ -49,7 +50,8 @@ function cleanApp(input: AppInput): AppInput | string {
   if (!SLUG.test(slug)) return "Slug may only use a–z, 0–9 and single dashes.";
   if (!category) return "Pick a category.";
   if (!HEX.test(accent)) return "Accent must be a hex colour like #6D5DF6.";
-  return { name, slug, category, accent: accent.toUpperCase(), tagline: input.tagline.trim() };
+  const logoId = Number.isInteger(input.logoId) ? input.logoId : null;
+  return { name, slug, category, accent: accent.toUpperCase(), tagline: input.tagline.trim(), logoId };
 }
 
 export async function createApp(input: AppInput): Promise<Result<{ id: number }>> {
@@ -87,6 +89,59 @@ export async function deleteApp(id: number): Promise<Result> {
   await requireAdmin();
   try {
     await need().delete(apps).where(eq(apps.id, id));
+    refresh();
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Logo library                                                        */
+/* ------------------------------------------------------------------ */
+
+export type LogoHit = { id: number; name: string; accent: string };
+
+const LOGO_MIMES = new Set(["image/webp", "image/png", "image/jpeg", "image/svg+xml"]);
+const LOGO_MAX_BYTES = 400_000;
+
+/** Stores a logo the browser already resized (≤256px WebP) or an SVG as-is. */
+export async function uploadLogo(input: { name: string; mime: string; data: string; accent: string }): Promise<Result<{ logo: LogoHit }>> {
+  await requireAdmin();
+  const name = input.name.trim().slice(0, 80);
+  if (!name) return { ok: false, error: "Give the logo a name." };
+  if (!LOGO_MIMES.has(input.mime)) return { ok: false, error: "Use a PNG, JPG, WebP or SVG file." };
+  if (!/^[A-Za-z0-9+/=]+$/.test(input.data) || Buffer.byteLength(input.data, "base64") > LOGO_MAX_BYTES)
+    return { ok: false, error: "That image is too large (max 400 KB)." };
+  const accent = HEX.test(input.accent) ? input.accent.toUpperCase() : "#6D5DF6";
+  try {
+    const [row] = await need()
+      .insert(logos)
+      .values({ name, keywords: name.toLowerCase(), mime: input.mime, data: input.data, accent })
+      .returning({ id: logos.id, name: logos.name, accent: logos.accent });
+    return { ok: true, logo: row };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** Library search by name / keywords (newest first). */
+export async function searchLogos(query: string): Promise<LogoHit[]> {
+  await requireAdmin();
+  if (!db) return [];
+  const q = query.trim().toLowerCase().slice(0, 60);
+  const cols = { id: logos.id, name: logos.name, accent: logos.accent };
+  const base = db.select(cols).from(logos);
+  const rows = q
+    ? await base.where(or(ilike(logos.name, `%${q}%`), ilike(logos.keywords, `%${q}%`))).orderBy(desc(logos.id)).limit(60)
+    : await base.orderBy(desc(logos.id)).limit(60);
+  return rows;
+}
+
+export async function deleteLogo(id: number): Promise<Result> {
+  await requireAdmin();
+  try {
+    await need().delete(logos).where(eq(logos.id, id));
     refresh();
     return { ok: true };
   } catch (e) {

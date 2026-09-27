@@ -59,7 +59,10 @@ export default async function AdminDashboard() {
             {recent.map((s) => (
               <li key={s.id}>
                 <Link href={`/admin/screens/${s.id}`} className="admin-list-row">
-                  <i className="admin-swatch" style={{ "--accent": s.app.accent } as React.CSSProperties} />
+                  <i className={`admin-swatch${s.app.logoId ? " has-logo" : ""}`} style={{ "--accent": s.app.accent } as React.CSSProperties}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {s.app.logoId && <img src={`/api/logos/${s.app.logoId}`} alt="" />}
+                  </i>
                   <span className="admin-list-text">
                     <strong>{s.title}</strong>
                     <span>

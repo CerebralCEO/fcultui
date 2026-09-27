@@ -21,8 +21,10 @@ export type AdminApp = {
   name: string;
   category: string;
   accent: string;
+  logoId: number | null;
   tagline: string;
   position: number;
+  updatedAt: Date;
   screens: AdminScreenRow[];
 };
 
@@ -40,7 +42,7 @@ export async function adminApps(): Promise<AdminApp[]> {
   if (!db) return [];
   return db.query.apps.findMany({
     orderBy: [asc(apps.position), asc(apps.id)],
-    columns: { id: true, slug: true, name: true, category: true, accent: true, tagline: true, position: true },
+    columns: { id: true, slug: true, name: true, category: true, accent: true, logoId: true, tagline: true, position: true, updatedAt: true },
     with: { screens: { columns: screenCols, orderBy: [asc(screens.position), asc(screens.id)] } },
   });
 }
@@ -49,7 +51,7 @@ export async function adminApp(id: number): Promise<AdminApp | null> {
   if (!db || !Number.isInteger(id)) return null;
   const app = await db.query.apps.findFirst({
     where: eq(apps.id, id),
-    columns: { id: true, slug: true, name: true, category: true, accent: true, tagline: true, position: true },
+    columns: { id: true, slug: true, name: true, category: true, accent: true, logoId: true, tagline: true, position: true, updatedAt: true },
     with: { screens: { columns: screenCols, orderBy: [asc(screens.position), asc(screens.id)] } },
   });
   return app ?? null;
@@ -61,7 +63,7 @@ export async function adminRecentScreens(limit = 8) {
     orderBy: [desc(screens.updatedAt)],
     limit,
     columns: screenCols,
-    with: { app: { columns: { id: true, name: true, accent: true } } },
+    with: { app: { columns: { id: true, name: true, accent: true, logoId: true } } },
   });
 }
 
@@ -71,7 +73,7 @@ export async function adminScreen(id: number) {
   const s = await db.query.screens.findFirst({
     where: eq(screens.id, id),
     with: {
-      app: { columns: { id: true, name: true, slug: true, accent: true } },
+      app: { columns: { id: true, name: true, slug: true, accent: true, logoId: true } },
       sources: true,
       props: { orderBy: [asc(screenProps.position)] },
       tags: { with: { tag: true } },

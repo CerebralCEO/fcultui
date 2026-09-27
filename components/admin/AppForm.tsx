@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createApp, deleteApp, updateApp, type AppInput } from "@/app/admin/actions";
 import { slug as slugify } from "@/lib/data";
 import { ConfirmButton, Field, Spinner, useToast } from "./ui";
+import LogoPicker, { logoUrl } from "./LogoPicker";
 
 const SUGGESTED = [
   "Onboarding", "Authentication", "Dashboard", "Finance", "E-commerce", "Chat", "Social", "Music", "Fitness", "Travel",
@@ -23,7 +24,7 @@ export default function AppForm({
   const [pending, start] = useTransition();
   const [deleting, startDelete] = useTransition();
   const [v, setV] = useState<AppInput>(
-    app ?? { name: "", slug: "", category: "", accent: "#6D5DF6", tagline: "" },
+    app ?? { name: "", slug: "", category: "", accent: "#6D5DF6", tagline: "", logoId: null },
   );
   // Slug follows the name until it is edited by hand
   const [slugTouched, setSlugTouched] = useState(Boolean(app));
@@ -72,11 +73,13 @@ export default function AppForm({
             ))}
           </datalist>
         </Field>
-        <Field label="Accent">
-          <span className="admin-color">
-            <input type="color" value={/^#[0-9a-f]{6}$/i.test(v.accent) ? v.accent : "#6d5df6"} onChange={set("accent")} aria-label="Pick accent" />
-            <input className="admin-input mono" value={v.accent} onChange={set("accent")} placeholder="#6D5DF6" />
-          </span>
+        <Field label="Logo" hint="Upload or pick from the library. The accent colour is taken from the logo.">
+          <LogoPicker
+            value={v.logoId}
+            name={v.name}
+            onChange={(l) => setV((p) => ({ ...p, logoId: l.id, accent: l.accent }))}
+            onError={(m) => show(m, "error")}
+          />
         </Field>
         <Field label="Tagline" hint="One line under the card title, e.g. “Banking dashboard & spending”." wide>
           <input className="admin-input" value={v.tagline} onChange={set("tagline")} placeholder="What this app flow does" />
@@ -87,8 +90,13 @@ export default function AppForm({
       <div className="admin-preview-meta">
         <span className="admin-label">Card preview</span>
         <div className="app-meta">
-          <span className="app-icon" style={{ "--accent": v.accent } as React.CSSProperties}>
-            {(v.name || "A")[0]}
+          <span className={`app-icon${v.logoId ? " has-logo" : ""}`} style={{ "--accent": v.accent } as React.CSSProperties}>
+            {v.logoId ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl(v.logoId)} alt="" />
+            ) : (
+              (v.name || "A")[0]
+            )}
           </span>
           <div className="app-meta-text">
             <h3>{v.name || "App name"}</h3>
@@ -106,7 +114,7 @@ export default function AppForm({
             onConfirm={() =>
               startDelete(async () => {
                 const r = await deleteApp(app.id);
-                if (r.ok) router.push("/admin");
+                if (r.ok) router.push("/admin/apps");
                 else show(r.error, "error");
               })
             }
