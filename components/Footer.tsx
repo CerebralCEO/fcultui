@@ -59,7 +59,7 @@ export default function Footer() {
     { scope: ref }
   );
 
-  if (pathname.startsWith("/explore")) return null;
+  if (pathname.startsWith("/explore") || pathname.startsWith("/admin")) return null;
 
   return (
     <footer className="footer" ref={ref}>

@@ -614,6 +614,17 @@ Clerk supplies the logic (`useSignIn` / `useSignUp` signal API, `signIn.sso`), a
 - **Tile toolbar**: with Flutter selected and signed out, "Copy" becomes the lime **Unlock** button, which opens the modal. React Native is always "Copy".
 - **Lime is the members colour**: the promo gradient (`{colors.promo-lime}` → `{colors.promo-mint}`) marks membership and unlock actions only.
 
+### Admin Panel (`/admin`)
+Owner-only workspace built entirely from the site's own parts. It adds no new colours and no new radii.
+- **Shell**: the detail grid (`.detail`, 264px rail + body) with the same rail anatomy. It has an owner card (`surface-subtle`, radius 14, hairline), WORKSPACE links with icons, and an APPS tree (accent swatch 10px/radius 3, screens on the tree guide with the sliding pill). The footer is hidden. Below 992px the rail becomes a swipeable row of 34px pills.
+- **Status badges** reuse `.nav-badge`: Draft and Building use `{colors.muted}`, Live uses `{colors.badge-updated}`, Failed uses `{colors.error}`.
+- **Head**: crumbs, an h1 at `display-intro` size with the status badge, and actions on the right. The actions are `.tool-btn` pills plus the **primary**, a solid `{colors.ink}` pill with canvas text (44px, or 36px `.sm`). An "Unsaved" note has a pulsing dot.
+- **Cards**: `{colors.surface-subtle}`, hairline border, radius 18 (same as the preview panel). Stat cards show a 14px muted label and a 34px/510 tabular number.
+- **Inputs**: the auth input spec (48px, radius 14, `hairline-strong` border, canvas fill, 4px soft focus ring). Mono variant at 14px. Labels are 14px/510 and hints 13px muted. Tag input uses 30px `surface-25` pills.
+- **Editor**: Monaco themed to `{colors.code-background}` with a muted gutter, 13px/22px mono, no minimap, radius 14. Dropping a file shows a blurred overlay. Details and Preview sit side by side (1fr + 320px sticky device card), stacking below 1200px.
+- **Flow list**: 12px-radius rows with a grip handle (framer `Reorder`), a tabular `01` index, label and title, the status badge, and an "Edit →" `.tool-btn`.
+- **Feedback**: a glass toast pill at bottom centre (success check in `{colors.badge-updated}`, error dot in `{colors.error}`). Destructive actions use a two-step red text button with a 12% red tint when armed; it resets after 3.5s.
+
 ### Footer
 **`footer`**: a hairline top border, the logo mark with a one-line pitch, then three menus (Site / Resources / Social) whose headings are `{colors.body}` at 60% opacity. The bottom bar holds the © line, the social links (below 1500px) and the `Alt + M` theme switch. Columns fade up with a 70ms stagger on scroll.
 

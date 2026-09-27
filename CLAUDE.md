@@ -68,6 +68,17 @@ Motion, GSAP, Lenis, Tailwind v4 utilities without preflight).
 - Everything must keep working without Clerk keys (`lib/auth-config.ts`): no ClerkProvider, proxy is a no-op,
   everyone is signed out.
 
+## Admin panel (`/admin`)
+- Owner-only: `lib/admin.ts` allows only the Clerk user IDs in `ADMIN_USER_IDS`; everyone else gets a 404.
+  **Every admin page and every server action in `app/admin/actions.ts` must call `requireAdmin()` itself** — the
+  layout check does not protect actions.
+- Admin reads go through `lib/admin-queries.ts` (uncached, includes Flutter source). Mutations are server actions that
+  highlight code with Shiki at save time and call `updateTag("content")` so the public site updates at once.
+- Publishing a screen requires both Flutter and React Native source. Only `live` screens are public.
+- The UI reuses the site shell: `.detail` grid + `.detail-sidebar` rail with `.nav-*` classes, auth-style inputs,
+  `.tool-btn` / `Segmented` controls, `.admin-*` classes in `app/globals.css`. Monaco (`@monaco-editor/react`, CDN)
+  is themed to `--color--code-background`.
+
 ## Explore wall
 - `/explore` (the old `/templates`, redirected in `next.config.ts`) is immersive: `Header`, `Footer` return null there,
   Lenis is stopped, and `ExploreWall` portals a fixed wall to `<body>`. Its scroll is a custom infinite engine on the
