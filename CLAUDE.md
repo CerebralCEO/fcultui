@@ -28,7 +28,7 @@ Motion, GSAP, Lenis, Tailwind v4 utilities without preflight).
 - `components/device/Device.tsx`: `<Device>`, `<ScaledDevice>`, `<DeviceFan>`. The design canvas is **414 × 868** with a
   **390 × 844** screen. Size device parts in px only; scaling is done by `useDeviceScale`.
 - The device frame supplies status bar, camera, home indicator and safe areas (`--safe-top` / `--safe-bottom`).
-  Screen content and future captured assets must NOT include them.
+  Screen code (HTML demo, React Native, Flutter) must NOT draw them.
 - Screen tiles show one frameless screen at a time via `<ScreenCarousel>` (arrows, dots, swipe and ←/→ step through
   `screen.flow`). Kit tiles use `<DeviceFan bare>`. Screens are always 390 × 844. Follow the
   Mobbin-style anatomy in DESIGN.md → Cards & Containers (tile, badges, glass save and toolbar, meta row).
@@ -37,7 +37,8 @@ Motion, GSAP, Lenis, Tailwind v4 utilities without preflight).
   localStorage). Never make either a per-card setting. The code page must read the same `framework` value.
 - Screen animations must be declared only under `.device[data-playing]` so previews replay on hover. Playback is
   triggered by `usePlayback` in `components/ScreenCards.tsx` (hover on pointer devices, centred-in-view on touch).
-- The HTML screens in `components/screens/` are placeholders until real Flutter/RN captures replace them (PLAN §2.1).
+- The HTML screens in `components/screens/` are placeholders until live React Native web renders (grid) and the Flutter
+  multi-view host (details page) replace them — see `docs/PLAN.md`. No screenshots or videos, ever.
 
 ## Screen source code & detail page
 - Source of truth: `content/code/<design>/screen.dart` + `Screen.tsx` (plus `_shared/tokens.*`). Placeholders

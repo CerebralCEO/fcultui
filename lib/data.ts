@@ -77,7 +77,7 @@ export const slug = (s: string) =>
 
 /* ================= Screens (mobile UI library) ================= */
 
-/** Demo screen designs rendered in HTML until real Flutter/RN captures replace them (see docs/PLAN.md). */
+/** Demo screen designs rendered in HTML until live React Native / Flutter renders replace them (see docs/PLAN.md). */
 export type ScreenDesign =
   | "onboarding"
   | "auth"

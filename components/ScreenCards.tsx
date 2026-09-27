@@ -13,7 +13,7 @@ const ease = [0.16, 1, 0.3, 1] as const;
 
 /**
  * Preview playback: mouse hover on pointer devices, "centred in viewport" on touch devices.
- * Same trigger contract the future <video> previews will use (see docs/PLAN.md §2.1).
+ * The live React Native web renders will use this same trigger contract (see docs/PLAN.md §2.1).
  */
 function usePlayback<T extends HTMLElement>() {
   const ref = useRef<T>(null);

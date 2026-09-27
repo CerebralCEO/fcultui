@@ -1,8 +1,25 @@
 # FCult UI — Product & Architecture Plan
 
-> লক্ষ্য: হাজার হাজার ready-to-implement mobile screen। প্রতিটার **Flutter ও React Native** code থাকবে,
-> একটা toggle দিয়ে দুটোর মধ্যে switch করা যাবে। UI, layout আর animation হুবহু একই থাকবে।
-> Grid-এ hover করলে animation preview হবে, আর click করলে Aceternity-style code page খুলবে (আমাদের branding-এ)।
+> লক্ষ্য: হাজার হাজার ready-to-implement mobile screen। প্রতিটার **Flutter ও React Native (Expo)** code থাকবে।
+> একটা toggle দিয়ে দুটোর মধ্যে switch করা যাবে, আর UI, layout ও animation হুবহু একই থাকবে।
+> **কোনো screenshot বা video থাকবে না।** সব preview আসল code চালিয়ে দেখানো হবে।
+> নতুন screen যোগ আর update হবে **Admin panel** থেকে, code deploy ছাড়াই।
+
+---
+
+## 0. চূড়ান্ত সিদ্ধান্ত
+
+| বিষয় | সিদ্ধান্ত |
+|---|---|
+| Hosting | **Vercel** (serverless functions + ISR)। Cloudflare ব্যবহার হবে না |
+| Database | **Neon Postgres + Drizzle ORM**। GitHub-কে database হিসেবে ব্যবহার হবে না |
+| Auth | **Clerk**। Sign-in/Sign-up modal-এর design **আমাদের নিজস্ব** (DESIGN.md অনুযায়ী) |
+| Admin | শুধু একজন: owner (Clerk `publicMetadata.role = "admin"`) |
+| React Native | **Expo** (+ Reanimated, react-native-web) |
+| Flutter preview | **Multi-view embedding (primary) + iframe (fallback)**, details page-এ |
+| Grid / Explore preview | **React Native-এর live web render** (react-native-web, DOM) |
+| Code highlight | **Shiki**, admin-এ save করার সময় (HTML আকারে DB-তে থাকবে) |
+| খরচ | Build আর launch পর্যন্ত **$0** (নিচে §11-এর সতর্কতা দেখুন) |
 
 ---
 
@@ -10,154 +27,270 @@
 
 | চাই | কঠিন কেন |
 |---|---|
-| Grid-এ হাজারো screen, hover-এ animation | হাজারটা live Flutter/RN app চালালে browser মারা যাবে |
-| Flutter screen Next.js-এ দেখানো | Flutter web ~2MB engine (CanvasKit/Skwasm) নিয়ে আসে, আর প্রতিটা screen-এর জন্য আলাদা iframe চালানো অসম্ভব |
-| "UI literally unchanged" দুই framework-এ | দুটো আলাদা codebase, তাই drift হবেই, যদি না মেশিন দিয়ে যাচাই করা হয় |
-| iOS আর Android দুই frame | একই screen-কে দুটো device-এ দেখাতে হবে |
-
-## 2. Genius কৌশল: তিন স্তরের rendering
-
-মূল আইডিয়া: **যেখানে যতটুকু দরকার, ঠিক ততটুকু runtime।**
-
-```
-┌───────────────────────────── Grid (হাজারো card) ─────────────────────────────┐
-│  CSS device frame (আমাদের নিজের, crisp, iOS⇄Android morph)                    │
-│    └─ poster.avif  →  hover করলে loop.webm/mp4 (৩–৬ সেকেন্ড, ~২০০KB)          │
-│       কোনো Flutter/RN runtime নেই। শুধু image আর video।                          │
-└──────────────────────────────────────────────────────────────────────────────┘
-┌───────────────────────────── Detail page (একটা screen) ──────────────────────┐
-│  Poster সাথে সাথে দেখায়। তারপর idle/hover হলে LIVE interactive preview:     │
-│    Flutter → একটাই pre-built "flutter-host" engine, multi-view embedding     │
-│    React Native → "rn-host" (Expo web export), lazy iframe                   │
-│  "Run on your phone" → QR (Expo Snack / Flutter)                             │
-└──────────────────────────────────────────────────────────────────────────────┘
-┌───────────────────────────── Code (দুই framework) ───────────────────────────┐
-│  Build-time-এ Shiki দিয়ে pre-highlight করা HTML, তাই client JS শূন্য।          │
-│  Toggle শুধু code swap করে, preview একবিন্দুও নড়ে না।                         │
-└──────────────────────────────────────────────────────────────────────────────┘
-```
-
-### 2.1 Grid: pre-rendered capture + CSS device frame
-- Screen-এর capture নেওয়া হবে **status bar বা device ছাড়া**, শুধু 390 × 844 logical content (@2x = 780 × 1688)।
-- Device frame, status bar, notch/island আর home indicator আমাদের CSS `<Device>` component আঁকবে (**এটা এখনই বানানো আছে**)।
-  → **একটাই asset iOS আর Android দুই frame-এ কাজ করে।** Frame toggle instant, আর asset দ্বিগুণ হয় না।
-- Asset: `poster.avif` (~৪০KB) + `loop.webm` (AV1) + `loop.mp4` (H.264 fallback)।
-- Hover-এর নিয়ম এখনকার HTML demo-র মতোই: `playing` true হলে `video.currentTime = 0; video.play()`।
-  Touch device-এ card viewport-এর মাঝখানে এলে play হবে। (`usePlayback` hook আগে থেকেই এই contract মেনে চলে।)
-- Video `preload="none"`। শুধু poster lazy-load হয়। ফলে হাজার card থাকলেও page হালকা থাকে।
-
-### 2.2 Detail page-এ Live Flutter: *একটাই engine, অনেক view*
-- `apps/flutter-host`: একটা Flutter web app, যাতে **সব screen compile করা থাকে**।
-  - প্রতিটা screen `deferred as` import হবে। Dart web **deferred loading** প্রতিটা screen-এর code আলাদা chunk-এ ভাগ করে, তাই শুধু যে screen দরকার সেটাই download হয়।
-  - Registry codegen: `tool/gen_registry.dart` `content/screens/*/flutter/` scan করে `registry.g.dart` বানায়।
-  - Flutter-এর **multi-view embedding** (`multiViewEnabled: true`) ব্যবহার করা হবে: `app.addView({ hostElement, initialData: { screen: "ledger-overview", platform: "ios" } })`।
-    → iframe ছাড়াই আমাদের CSS device-এর screen area-র ভেতরে সরাসরি Flutter render হবে। Page-এ একাধিক preview থাকলেও (Examples section) engine **একবারই** load হয়।
-  - Renderer: WasmGC সমর্থিত browser-এ Skwasm, বাকিগুলোতে CanvasKit। `/flutter-host/*` immutable cache + service worker। ফলে দ্বিতীয় visit থেকে প্রায় সাথে সাথে load হয়।
-  - `platform` initialData দিলে Flutter `TargetPlatform` override হয়, তাই scroll physics আর ripple-ও iOS/Android অনুযায়ী ঠিক থাকে।
-- Load কৌশল: প্রথমে poster দেখায়। `requestIdleCallback` বা hover হলে engine prefetch হয়। Ready হলে poster থেকে live view-এ crossfade।
-
-### 2.3 Detail page-এ Live React Native
-- `apps/rn-host`: Expo Router web export (react-native-web + Reanimated web)। Route `/[screen]`।
-- Next-এর ভেতরে সরাসরি react-native-web চালানো সম্ভব, কিন্তু Reanimated, Gesture Handler আর Expo modules-এর bundler config Next-এর সাথে বারবার ভাঙে। তাই **isolated host + iframe** নেওয়া হলো (`postMessage` দিয়ে platform/theme sync)।
-- Default preview Flutter-এ চলবে, কারণ UI তো একই। একটা ছোট "Rendered with: Flutter | RN" switch রাখা হবে, যাতে সন্দেহ থাকলে user নিজেই যাচাই করতে পারে।
-
-### 2.4 "UI literally unchanged": মেশিন দিয়ে প্রমাণ (Parity CI)
-1. **Shared design tokens**: `packages/tokens/tokens.json` থেকে Style Dictionary দিয়ে তৈরি হয়:
-   - `flutter/lib/tokens.g.dart` (`AppColors`, `AppSpacing`, `AppRadius`, `AppMotion` (`Cubic(0.16,1,0.3,1)`))
-   - `react-native/tokens.ts` (`colors`, `spacing`, `radius`, `motion` (`Easing.bezier(0.16,1,0.3,1)`))
-   - একই font file দুই দিকে bundle হবে।
-2. **Capture pipeline** (GitHub Actions):
-   - Flutter host আর RN host দুটোই headless Chromium-এ (Playwright) 390 × 844 @2x-এ চলবে।
-   - প্রতিটা screen-এর capture নেওয়া হবে:
-     - Static poster: t = 0 আর animation-এর শেষে।
-     - 4s video: CDP screencast থেকে ffmpeg দিয়ে AV1/H.264।
-   - Flutter আর RN-এর frame-গুলো **pixel-diff** (pixelmatch/SSIM) করা হবে। ফল লেখা হবে `parity.json` (score) আর `diff.png`-এ।
-   - Threshold পার না হলে PR fail করবে। Detail page-এ badge দেখাবে: **"Parity 99.2%"**, যা একটা trust signal।
-3. **Phase 2 (অথেন্টিক native capture)**: macOS runner-এ iOS Simulator আর Android Emulator চলবে, Maestro দিয়ে flow চালানো হবে, `simctl io recordVideo` / `adb screenrecord` দিয়ে record হবে। এতে native font rendering আর আসল blur পাওয়া যায়।
+| Grid আর Explore-এ শত শত **live** screen | শত শত Flutter canvas একসাথে চালালে browser আটকে যাবে |
+| Flutter screen Next.js-এর ভেতরে দেখানো | Next.js সরাসরি Dart চালাতে পারে না। Flutter web নিজের engine (~২–৪MB) নিয়ে আসে |
+| Admin থেকে upload করলেই live | Dart browser বা Vercel function-এ compile করা যায় না। একটা build worker লাগবে |
+| দুই framework-এ "UI literally unchanged" | দুটো আলাদা codebase, তাই মেশিন দিয়ে যাচাই না করলে পার্থক্য তৈরি হবেই |
 
 ---
 
-## 3. Content model (single source of truth)
+## 2. Rendering কৌশল: যেখানে যতটুকু দরকার, ঠিক ততটুকু runtime
 
 ```
-content/screens/ledger-overview/
-├── meta.json            # title, slug, category, tags, tone, accent, deps, platforms, createdAt, pro
-├── flutter/
-│   ├── lib/ledger_overview_screen.dart
-│   └── lib/widgets/…
-├── react-native/
-│   ├── LedgerOverviewScreen.tsx
-│   └── components/…
-├── examples/            # optional variants (Aceternity-র "Examples" section-এর জন্য)
-└── preview/             # CI-generated, commit হবে না → CDN (R2/Vercel Blob)
-    ├── poster.avif  loop.webm  loop.mp4  parity.json
+┌──────────────────────── Grid / Explore wall (শত শত tile) ────────────────────────┐
+│  React Native code → react-native-web → আসল DOM render                            │
+│  হালকা, অনেকগুলো একসাথে চলে। hover বা দৃশ্যমান হলে animation চলে।                │
+│  iOS/Android frame আমাদের CSS <Device> আঁকে (আগেই বানানো আছে)।                     │
+└──────────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────── Details page (একটা screen + তার flow) ───────────────────┐
+│  Default: React Native live render (সাথে সাথে দেখায়)                             │
+│  Flutter বাছলে → একটাই Flutter engine, multi-view দিয়ে প্রতিটা preview-এ একটা view │
+│  Multi-view ব্যর্থ হলে → একই host-এর route iframe-এ (fallback)                   │
+└──────────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────── Code (দুই framework) ───────────────────────────────────┐
+│  Admin-এ save করার সময় Shiki highlight → DB-তে HTML। Public page-এ highlight-এর │
+│  কোনো খরচ নেই। Toggle শুধু code বদলায়, preview আর layout একটুও নড়ে না।         │
+└──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-`scripts/build-content.ts` (prebuild step) তৈরি করে:
-- `public/manifest.json`: grid-এর জন্য হালকা list (slug, title, category, accent, poster URL)। Filter, pagination আর search index এখান থেকে আসে।
-- `.content/screens/<slug>.json`: দুই ভাষার Shiki-highlighted HTML (dual theme, CSS vars), file tree, dependency list, install commands।
-- Flutter আর RN host-এর registry file।
+### 2.1 React Native: সব জায়গায় live web render
+- প্রতিটা screen-এর TSX **Babel (Reanimated/worklets plugin) → esbuild** দিয়ে একটা ESM bundle হয় (admin-এ save করার সময়, Vercel function-এ)।
+- Bundle থাকে **Vercel Blob**-এ। Site `import()` দিয়ে load করে, আর shared dependency (react, react-native-web, reanimated, expo-linear-gradient, vector-icons, svg) আমাদের নিজস্ব import map থেকে একবারই নামে।
+- Grid আর Explore-এ tile দৃশ্যমান হলে mount হয়, দূরে গেলে unmount হয় (virtualization)। Animation চলে শুধু hover-এ বা (touch device-এ) screen-এর মাঝখানে এলে। এখনকার `usePlayback` আর `data-playing` contract একই থাকবে।
+- এখনকার HTML placeholder screen (`components/screens/`) এই render দিয়ে বদলে যাবে।
 
-Scale: হাজার হাজার screen।
-- Detail page-এ `generateStaticParams` দিয়ে জনপ্রিয় N-টা prerender হবে, বাকিগুলো on-demand + cached (Next 16 caching)।
-- Grid হবে server-side pagination + `?tag=` filter।
-- Search: Orama/FlexSearch index, শুধু search modal খুললে lazy-load হবে।
+### 2.2 Flutter: Multi-view embedding (primary)
+আপনার দেওয়া দুই option-এর তুলনা:
 
----
-
-## 4. Detail / Code page (Aceternity layout, আমাদের branding)
-
-Route: `/screens/[slug]` (আর kit-এর জন্য `/templates/[slug]`)। সব DESIGN.md token দিয়ে বানানো হবে।
-
-1. Breadcrumb `Screens / Ledger Overview`, তারপর h1 (`display-intro`), এক লাইনের description আর tag pills।
-2. **Preview panel** (`surface-subtle`, radius 14):
-   - বাম দিকে tabs `Preview | Code`।
-   - ডান দিকে toolbar: **framework toggle `Flutter ⇄ React Native`**, `iOS | Android` frame toggle, "Copy prompt" (AI prompt দিয়ে screen customize করার জন্য), fullscreen।
-   - Preview-তে CSS device-এর ভেতরে live Flutter view থাকবে।
-3. **Installation**: `CLI | Manual` tabs।
-   - CLI: `npx fcultui add ledger-overview`। CLI project type নিজেই detect করে (`pubspec.yaml` থাকলে Flutter, `package.json` + react-native থাকলে RN), file বসিয়ে দেয় আর dependency install করে (`flutter pub add …` / `npx expo install …`)। shadcn-registry-র মতো।
-   - Manual: step-by-step instructions (dependencies, token file, source file) আর প্রতিটা code block-এ Copy ও Expand।
-4. **Examples**: variant preview আর code।
-5. **Props / Parameters** টেবিল: Flutter constructor params আর RN props পাশাপাশি।
-6. **Parity badge**, changelog আর "Related screens" grid।
-
-Toggle-এর আচরণ:
-- Preference `cookie` + `localStorage`-এ থাকবে। Server cookie পড়ে সঠিক ভাষার code **প্রথমেই** render করবে, তাই flash হবে না।
-- Toggle করলে শুধু code block crossfade হবে (framer `AnimatePresence`)। Preview, layout আর height **একটুও নড়বে না** (দুই ভাষার block-এর height আলাদা হলে `min-height` lock থাকবে)।
-- Shortcut: `F` = Flutter, `R` = React Native।
-
----
-
-## 5. Repo structure (যখন real screens আসবে)
-
-```
-fcultui/                      (pnpm + Turborepo monorepo)
-├── apps/
-│   ├── web/                  ← এখনকার Next.js app এখানে move হবে
-│   ├── flutter-host/         ← সব screen-এর Flutter web host (multi-view)
-│   └── rn-host/              ← Expo Router web host
-├── packages/
-│   ├── tokens/               ← tokens.json → Dart + TS
-│   ├── cli/                  ← `npx fcultui add`
-│   └── capture/              ← Playwright capture + parity diff
-└── content/screens/…         ← source of truth
-```
-
----
-
-## 6. Roadmap
-
-| Phase | কাজ | Status |
+| | Iframe per route | Multi-view embedding |
 |---|---|---|
-| 0 | Minimal Gallery-র pixel-perfect shell, animation, CSS iOS/Android device, mockup cards, DESIGN.md, CLAUDE.md, এই plan | ✅ সম্পন্ন |
-| 1 | Content model + `/screens/[slug]` detail page (demo content দিয়ে)। Shiki code blocks, Flutter/RN toggle, Preview/Code tabs, Installation section | ✅ সম্পন্ন (২৩টা static page, ১২টা design × ২ framework-এর code) |
-| 2 | Monorepo + tokens package + প্রথম ৫টা real screen (Flutter + RN) | |
-| 3 | Capture pipeline: poster/loop video, CSS device-এ `<video>` দিয়ে hover preview, parity diff CI | |
-| 4 | Live preview: flutter-host (multi-view, deferred), rn-host, QR/Snack | |
-| 5 | CLI registry, search index, tag/pagination data wiring, bookmarks page, All-Access (pro লক, auth, payment) | |
+| Setup | সবচেয়ে সহজ | একটু বেশি কাজ |
+| Isolation (CSS, font, crash) | পুরো আলাদা ✅ | একই page-এ |
+| একই page-এ ৪টা preview | ৪টা আলাদা engine boot হয় ❌ | **একটাই engine, ৪টা view** ✅ |
+| Screen বদলানো | প্রতিবার নতুন করে boot | Engine চালুই থাকে, নতুন view প্রায় সাথে সাথে ✅ |
+| Theme/platform sync | `postMessage` | সরাসরি `initialData` |
 
-## 7. যে সিদ্ধান্তগুলো আপনার কাছ থেকে দরকার
+**পরিকল্পনা:**
+1. **Flutter host** একটা আলাদা static Vercel project। এতে সব screen compile করা থাকে, প্রতিটা `deferred as` import হিসেবে, তাই যে screen দরকার শুধু তার code নামে।
+2. Main site-এ **Vercel rewrite** `/flutter/:path*` → flutter-host deployment। সব same-origin থাকে, CORS-এর ঝামেলা নেই, browser cache ঠিকমতো কাজ করে।
+3. `flutter.js` loader চলে `multiViewEnabled: true` দিয়ে, তারপর `app.addView({ hostElement, initialData: { screen, platform, accent } })`।
+   `platform` দিলে Flutter-এর `TargetPlatform` override হয়, তাই scroll physics আর ripple-ও iOS/Android অনুযায়ী ঠিক থাকে।
+4. **Engine একবারই load হয়, details page-এর layout-এ** (`app/screens/(detail)/layout.tsx` screen বদলালে remount হয় না)। এক screen থেকে আরেকটায় গেলে শুধু `removeView` → `addView` হয়।
+5. **Lazy load:** preview panel দৃশ্যমান হলে আর user Flutter বাছলে তবেই engine নামে (idle-এ prefetch করা হয়)। তার আগ পর্যন্ত React Native render দেখায়।
+6. **Fallback:** multi-view ব্যর্থ হলে `/flutter/?screen=<slug>&platform=ios` iframe-এ খোলে।
+7. Renderer: WasmGC সমর্থিত browser-এ skwasm, বাকিগুলোতে CanvasKit। Site-এ COOP/COEP header লাগানো হবে না (এতে Clerk-এর মতো third-party ভাঙতে পারে), তাই skwasm single-threaded চলবে।
+
+**Admin-এর জন্য বাড়তি option:** Flutter code লেখার সময় CI build-এর অপেক্ষা না করে **DartPad embed**-এ তাৎক্ষণিক আসল preview দেখা যাবে। DartPad শুধু single-file নেয়, তাই tokens file আর screen-এর code জোড়া দিয়ে একটা file পাঠানো হবে। Public site-এ এটা ব্যবহার হবে না।
+
+### 2.3 "UI literally unchanged": মেশিন দিয়ে যাচাই (parity)
+- **Shared tokens:** DB-তে একটা `tokens.json`। এখান থেকে `tokens.dart` আর `tokens.ts` generate হয় (এখনকার `content/code/_shared/` এর format অনুযায়ী)।
+- **Parity test:** Flutter build-এর পর CI-তে Playwright দিয়ে দুই render (react-native-web DOM আর Flutter canvas) 390 × 844-এ capture করে pixel-diff (pixelmatch/SSIM) করা হবে। এই ছবিগুলো শুধু test-এর জন্য, **site-এ কখনো দেখানো হবে না**। Score DB-তে থাকবে, আর admin panel-এ ও details page-এ "Parity 99.2%" badge হিসেবে দেখাবে।
+
+---
+
+## 3. Architecture
+
+```
+Admin (/admin, Clerk + role=admin)
+  │  Monaco editor: Dart + TSX + meta
+  │  ├─ React Native preview: browser-এ esbuild-wasm দিয়ে তাৎক্ষণিক
+  │  └─ Flutter preview: DartPad embed (draft) / CI build শেষে আসল host
+  ▼
+Server Actions (Vercel Functions)
+  ├─ Zod দিয়ে validate
+  ├─ Neon-এ save (Drizzle): source, meta, Shiki highlight করা HTML
+  ├─ React Native: Babel → esbuild → ESM bundle → Vercel Blob → screen_sources.rn_bundle_url
+  └─ Flutter: GitHub API → repository_dispatch → builder repo-র workflow
+                    │
+                    ▼
+     Public "builder" repo (শুধু host template আর workflow থাকে, code থাকে Neon-এ)
+       1. Neon থেকে সব published Flutter source + tokens নেয় (read-only DB role)
+       2. registry codegen → flutter analyze → flutter build web --wasm --release
+       3. Parity test (Playwright)
+       4. vercel deploy --prebuilt → flutter-host project
+       5. POST /api/builds/callback (HMAC সই করা) → build status + parity score
+                    │
+                    ▼
+Main site: revalidateTag("screen:<slug>") / revalidateTag("screens")
+  → React Native update ~১০ সেকেন্ডে live, Flutter update ~৪–৬ মিনিটে live
+```
+
+**Builder repo public কেন:** GitHub Actions public repo-তে **unlimited free minutes** দেয়। Repo-তে কোনো screen code থাকে না, build-এর সময় DB থেকে আনা হয়। শর্ত: workflow log-এ কোনো source code print করা যাবে না। DB credential থাকবে শুধু GitHub Secrets-এ, আর সেটা read-only role।
+
+---
+
+## 4. Tech stack
+
+| কাজ | Tool |
+|---|---|
+| Site আর API | Next.js 16 (App Router) on **Vercel**: serverless functions, ISR, `cacheTag` / `revalidateTag` |
+| Database | **Neon Postgres** (serverless driver `@neondatabase/serverless`) + **Drizzle ORM** + drizzle-kit (migration) |
+| Auth | **Clerk** (`@clerk/nextjs`): নিজস্ব modal UI, `useSignIn` / `useSignUp` hook দিয়ে; Next 16-এর `proxy.ts`-এ `clerkMiddleware` |
+| File storage | **Vercel Blob**: React Native bundle, font, vendor ESM |
+| React Native preview | react-native-web, Reanimated (web), expo-linear-gradient, @expo/vector-icons, react-native-svg |
+| React Native compile | @babel/core (+ Reanimated/worklets plugin) → esbuild (server); esbuild-wasm (admin browser) |
+| Flutter preview | Flutter Web (Wasm) multi-view host, আলাদা Vercel project + rewrite; iframe fallback |
+| Flutter build | GitHub Actions (public builder repo) + Vercel CLI |
+| Admin editor | Monaco Editor |
+| Highlight | Shiki (dual theme, save-time) |
+| Validation | Zod |
+| Animation (UI) | এখনকার Framer Motion + GSAP + Lenis |
+| পরে | Payment: Lemon Squeezy / Paddle (Clerk user-এর সাথে যুক্ত); CLI: npm-এ `fcultui`; Search: Orama; Email: MailerLite / Buttondown |
+
+---
+
+## 5. Database schema (Drizzle, প্রথম খসড়া)
+
+```ts
+// db/schema.ts (আনুমানিক রূপ)
+apps            id, slug (unique), name, category, accent, tagline, position, created_at, updated_at
+screens         id, app_id → apps, slug (unique), title, label ("Sign in"), tagline, tone ("light"|"dark"),
+                badge ("new"|"updated"|null), is_pro, status ("draft"|"building"|"live"|"failed"),
+                position (flow-এর ক্রম), parity_score, published_at, created_at, updated_at
+screen_sources  id, screen_id → screens, framework ("flutter"|"rn"), files jsonb [{ path, content }],
+                highlighted jsonb [{ path, html }], rn_bundle_url, version, updated_at
+                unique (screen_id, framework)
+screen_props    id, screen_id, name, flutter_type, rn_type, default_value, description, position
+tags            id, slug, name
+screen_tags     screen_id, tag_id
+builds          id, target ("flutter"|"rn"), status ("queued"|"running"|"success"|"failed"),
+                triggered_by, run_url, error, started_at, finished_at
+design_tokens   id, version, json jsonb, created_at  (সবচেয়ে নতুনটা active)
+-- পরে
+users           clerk_id (pk), email, created_at   (Clerk webhook দিয়ে sync)
+bookmarks       user_id, screen_id, created_at
+purchases       user_id, provider, order_id, plan, created_at
+```
+
+- Grid-এর জন্য হালকা query (slug, title, tagline, category, accent, badge, is_pro, rn_bundle_url) আর details page-এর জন্য পূর্ণ query (sources, props, flow)। দুটো আলাদা cache tag-এ থাকবে।
+- এখনকার `lib/data.ts`-এর demo data আর `content/code/*` একটা **seed script** দিয়ে DB-তে তোলা হবে। তারপর `lib/data.ts` সরে যাবে।
+
+---
+
+## 6. Auth (Clerk, নিজস্ব design)
+
+- **Modal:** আমাদের নিজস্ব component (`components/auth/AuthModal.tsx`), Framer Motion spring, DESIGN.md token। Clerk-এর UI component ব্যবহার হবে না, শুধু hook (`useSignIn`, `useSignUp`, OAuth redirect)।
+- **Sign-in পদ্ধতি:** Email + OTP code, Google, GitHub।
+- **Admin:** Clerk dashboard-এ নিজের user-এ `publicMetadata.role = "admin"` দিতে হবে।
+  - `proxy.ts`: `/admin(.*)` আর `/api/admin(.*)`-এ `clerkMiddleware` দিয়ে admin ছাড়া বাকিদের redirect।
+  - প্রতিটা Server Action-এর শুরুতে আবার role যাচাই হবে (defence in depth)।
+- **পরে:** Pro content (All-Access)-এর জন্য `purchases` table দেখে access দেওয়া হবে।
+
+---
+
+## 7. Admin panel (`/admin`)
+
+| Page | কাজ |
+|---|---|
+| **Dashboard** | মোট screen, draft / live / failed সংখ্যা, শেষ build-এর অবস্থা |
+| **Apps** | App তৈরি/সম্পাদনা (নাম, category, accent), flow-এ screen-এর ক্রম (drag to reorder) |
+| **Screens → Edit** | Meta form (title, tagline, tone, tags, badge, Pro) · Dart আর TSX পাশাপাশি Monaco-তে · একাধিক file (tab) · zip বা drag-drop upload · Props table editor |
+| **Live preview (editor-এর পাশে)** | React Native: টাইপ করার সাথে সাথে esbuild-wasm দিয়ে compile হয়ে phone frame-এ · Flutter: DartPad embed (draft) অথবা শেষ build |
+| **Publish** | Save draft · Publish (React Native bundle + Flutter build চালু) · Unpublish · Version history থেকে rollback |
+| **Builds** | চলমান আর আগের build, GitHub Actions run-এর link, error, parity score |
+| **Tokens** | `tokens.json` সম্পাদনা (পরিবর্তনে সব screen-এর rebuild) |
+
+Admin-এর UI-ও এখনকার DESIGN.md token দিয়ে বানানো হবে (dark, greyscale, pill control)।
+
+---
+
+## 8. Screen লেখার নিয়ম (contract)
+
+1. প্রতিটা screen দুটো আসল playground project-এ আগে লেখা আর device-এ যাচাই করা হবে:
+   - `playgrounds/expo`: Expo Go-তে QR scan করে phone-এ চালানো।
+   - `playgrounds/flutter`: simulator বা device-এ চালানো।
+2. Public API দুই দিকে একই: `<Name>Screen({ accent, ...props })` (Flutter-এ constructor param)। এখনকার `content/code/*` এই pattern-এই লেখা।
+3. Token বাধ্যতামূলক: color, spacing, radius, motion সব `tokens.dart` / `tokens.ts` থেকে।
+4. Animation-এর সময় আর easing দুই দিকে একই (যেমন `FcMotion.easeOutExpo` ⇄ `motion.easeOutExpo`)।
+5. **Web-compatible package-ই শুধু চলবে:** Reanimated, gesture-handler, svg, linear-gradient, vector-icons, safe-area-context। Camera বা map-এর মতো শুধু-native module হলে preview-এর জন্য web mock লাগবে।
+6. Network call চলবে না। সব mock data screen-এর ভেতরে, যাতে preview প্রতিবার একই রকম হয়।
+7. Status bar আর safe area screen আঁকবে না। সেটা preview-এর device frame দেবে।
+
+---
+
+## 9. Code showcase
+
+- rehype-pretty-code নিজেও ভেতরে Shiki ব্যবহার করে, আর আমাদের এখানে Shiki আগে থেকেই আছে। তাই MDX লাগবে না।
+- **Save করার সময়** Shiki দুই theme-এ (dark/light CSS var) highlight করে HTML DB-তে রাখে।
+- Details page-এর এখনকার সব আচরণ একই থাকবে:
+  - দুই framework-এর code একই grid cell-এ stack করা, `html[data-fw]` দিয়ে দেখানো বা লুকানো, তাই flash বা layout shift নেই।
+  - Copy, Expand/Collapse, Installation (CLI | Manual), Props table, flow-এর বাকি screen।
+
+---
+
+## 10. Repo structure
+
+```
+fcultui/                         (pnpm workspace)
+├── app/                         ← Next.js (site + /admin + /api)
+├── components/                  ← এখনকার UI (+ auth/, admin/, preview/)
+├── db/
+│   ├── schema.ts                ← Drizzle schema
+│   ├── index.ts                 ← Neon client
+│   └── seed.ts                  ← এখনকার demo data + content/code → DB
+├── drizzle/                     ← migration file (drizzle-kit)
+├── lib/
+│   ├── rn-compile.ts            ← Babel + esbuild (server)
+│   ├── highlight.ts             ← Shiki
+│   └── flutter-build.ts         ← repository_dispatch trigger + callback verify
+├── proxy.ts                     ← Clerk (Next 16-এ middleware-এর নতুন নাম)
+├── playgrounds/
+│   ├── expo/                    ← screen লেখা আর device-এ যাচাই
+│   └── flutter/
+└── public/vendor/               ← react-native-web ইত্যাদির ESM (import map)
+
+fcultui-flutter-builder/         (আলাদা, PUBLIC repo)
+├── host/                        ← Flutter multi-view host template
+├── tool/gen_registry.dart       ← DB থেকে আনা source দিয়ে registry তৈরি
+└── .github/workflows/build.yml
+```
+
+### Environment variables
+| নাম | কোথায় |
+|---|---|
+| `DATABASE_URL` | Vercel + local (`.env.local`) |
+| `DATABASE_URL_READONLY` | শুধু builder repo-র GitHub Secret |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | Vercel + local |
+| `BLOB_READ_WRITE_TOKEN` | Vercel + local |
+| `GITHUB_DISPATCH_TOKEN` | Vercel (fine-grained, শুধু builder repo-তে dispatch) |
+| `BUILD_CALLBACK_SECRET` | Vercel + builder repo (HMAC) |
+| `VERCEL_TOKEN`, `FLUTTER_HOST_PROJECT_ID` | শুধু builder repo |
+
+Secret কখনো chat বা repo-তে যাবে না।
+
+---
+
+## 11. সতর্কতা আর ঝুঁকি
+
+1. **Vercel Hobby plan commercial ব্যবহারে নিষিদ্ধ।** Build আর launch-এর আগ পর্যন্ত $0-তে চলবে। All-Access বিক্রি শুরু করলে Vercel-এর নিয়ম অনুযায়ী Pro plan লাগবে (মাসে $20)। Neon, Clerk আর Blob-এর free tier শুরুর পর্যায়ের জন্য যথেষ্ট, তবে usage বাড়লে limit দেখতে হবে।
+2. **React Native-কে server-এ compile করা সবচেয়ে ঝুঁকির অংশ।** Reanimated-এর Babel plugin আর import map দিয়ে `react-native` → `react-native-web` resolve, এগুলো **ধাপ D-এর শুরুতে একটা spike** দিয়ে প্রমাণ করতে হবে।
+   বিকল্প: React Native-ও CI-তে Expo web export দিয়ে build করা। তবে তখন grid-এ iframe লাগবে, যা ভারী।
+3. **Flutter update সাথে সাথে আসবে না।** Dart compile-এর জন্য CI লাগে, তাই প্রতিটা Flutter update ~৪–৬ মিনিট পরে live হয়। Admin-এ DartPad দিয়ে draft আগে দেখা যাবে।
+4. **Builder repo public।** Code DB-তে থাকে, কিন্তু build-এর সময় runner-এ নামে। Log-এ print করা যাবে না, আর deploy করা host-এ compiled JS/Wasm যাবেই (web-এ চালাতে হলে এটা এড়ানো যায় না)।
+5. **Pro code-এর সুরক্ষা।** Highlight করা source HTML আর copy শুধু access থাকলে server থেকে পাঠানো হবে। তবে compiled preview (web bundle) সবার browser-এ যায়, তাই সেটা obfuscated/minified রাখা হবে।
+6. **Grid-এর performance।** React Native live render হালকা হলেও শত শত tile একসাথে ভারী। Virtualization (দৃশ্যমান tile ছাড়া unmount) বাধ্যতামূলক।
+
+---
+
+## 12. Roadmap
+
+| ধাপ | কাজ | Status |
+|---|---|---|
+| 0 | Minimal Gallery-র pixel-perfect shell, animation, CSS iOS/Android device, Mobbin-style card + carousel, DESIGN.md, CLAUDE.md | ✅ সম্পন্ন |
+| 1 | `/screens/[slug]` details page (Aceternity layout), Shiki code, Flutter/RN toggle, Installation, Props; premium sidebar + mobile sheet; Explore infinite wall | ✅ সম্পন্ন (demo content দিয়ে) |
+| **A** | Drizzle + Neon: schema, migration, seed (demo data + `content/code`), `lib/data.ts`-এর বদলে সব data DB থেকে; `cacheTag`/`revalidateTag` | |
+| **B** | Clerk: নিজস্ব design-এর auth modal, `proxy.ts`, admin role, header-এ account menu | |
+| **C** | Admin panel: dashboard, apps, screen editor (meta + Monaco Dart/TSX + upload + props), save/publish, Shiki save-time highlight, version history | |
+| **D** | React Native pipeline: **spike** → server compile → Blob → import map → grid, Explore আর details page-এ আসল React Native render (HTML placeholder বাদ) + virtualization; admin-এ esbuild-wasm live preview | |
+| **E** | Flutter: builder repo, workflow, multi-view host, Vercel rewrite, details page-এ live embed + iframe fallback, build callback; admin-এ DartPad draft preview | |
+| **F** | প্রথম ৩টা আসল screen দুই framework-এ লিখে playground-এ যাচাই, admin থেকে publish করে পুরো flow end-to-end পরীক্ষা; parity test চালু | |
+| G | `npx fcultui add` CLI, Orama search, tag filter আর pagination wiring, bookmarks, All-Access (payment) | |
+
+---
+
+## 13. যে সিদ্ধান্তগুলো এখনো বাকি
+
 1. **Brand name** (এখন `FCult UI` placeholder, `lib/site.ts`-এ এক লাইনে বদলানো যায়)।
-2. Free vs Pro: কোন screen-এর code সবার জন্য খোলা থাকবে?
-3. React Native target: Expo (সুপারিশ, কারণ Snack/QR আর web host সহজ) নাকি bare RN CLI?
-4. Asset hosting: Cloudflare R2 (সস্তা egress, সুপারিশ) নাকি Vercel Blob?
+2. **Free vs Pro:** কোন screen-এর code সবার জন্য খোলা থাকবে?
+3. **Sign-in পদ্ধতি:** Email OTP + Google + GitHub, তিনটাই রাখব?
+4. শুরুর জন্য দরকার: Neon `DATABASE_URL` আর Clerk-এর key দুটো, **`.env.local`-এ** (chat-এ নয়)।

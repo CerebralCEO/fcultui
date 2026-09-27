@@ -1,6 +1,6 @@
 /*
- * Demo screens (390 × 844 logical px). Placeholders until real Flutter / React Native captures
- * replace them — see docs/PLAN.md §3. Animations run only while the parent .device has [data-playing].
+ * Demo screens (390 × 844 logical px). Placeholders until live React Native web / Flutter renders
+ * replace them — see docs/PLAN.md §2. Animations run only while the parent .device has [data-playing].
  */
 import type { CSSProperties } from "react";
 import type { ScreenDesign } from "@/lib/data";

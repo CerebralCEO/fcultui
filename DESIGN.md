@@ -602,7 +602,7 @@ An immersive, applama-style wall of **every screen of every flow** (92 tiles). T
 - Don't make framework or platform a per-card setting. Both are global preferences.
 - Don't change the grid breakpoints (1500 / 1081 / 744) or the gutter formula.
 - Don't draw the device with images. It stays CSS, so it remains crisp and can morph between platforms.
-- Don't put status bars or safe areas inside captured screen assets. The device frame supplies them.
+- Don't draw status bars or safe areas inside screen code. The device frame supplies them.
 - Don't hard-code the brand name. Use `site.name` from `lib/site.ts`.
 
 ## Responsive Behavior
@@ -634,15 +634,15 @@ Devices re-measure with ResizeObserver and scale to fit. Remote images (tool ico
 ## Iteration Guide
 1. Before building any page, read this file and `app/globals.css`, then reuse the existing class families (`.posts`, `.post`, `.media`, `.tags-menu`, `.page`, `.posts-header`).
 2. New variants get a new component entry in the YAML above, with a kebab-case suffix such as `-active` or `-selected`.
-3. New screens: add a design to `components/screens` (placeholder) or real captures (see `docs/PLAN.md`). Never change `Device` for a single screen's sake.
+3. New screens are added from the Admin panel as real Flutter + React Native code (see `docs/PLAN.md`). Never change `Device` for a single screen's sake.
 4. When the shell needs emphasis, step up the grey ladder before reaching for anything new.
 5. Any new motion must use an existing easing token and support replay: hover to play, leave to reset.
 
 ## Known Gaps
 - No error, validation or empty states have been built yet (`{colors.error}` exists but is unused).
-- The detail page's flow examples reuse the demo HTML screens; live Flutter/RN hosts (PLAN §2.2–2.3) are not wired yet.
+- The detail page's flow examples reuse the demo HTML screens; the React Native web render and Flutter multi-view host (PLAN §2.1–2.2) are not wired yet.
 - `npx fcultui` CLI commands are displayed but the CLI does not exist yet.
 - The light theme is ported from the original's tokens, but the device mockups and promo tile have not been separately tuned for it.
 - Tag filtering, pagination and bookmarks exist only as UI; they are not wired to data yet.
-- The Explore wall renders live HTML screens (184 tiles incl. the wrap copy). Once real captures exist, tiles should switch to poster images and hover videos (PLAN §2.1).
-- Demo screens are HTML placeholders; the real screens will be captured Flutter/RN renders.
+- The Explore wall renders live HTML screens (184 tiles incl. the wrap copy). When the React Native web render replaces them (PLAN §2.1), tiles must be virtualized (mount only near the viewport).
+- Demo screens are HTML placeholders; they will be replaced by live React Native web renders (grid) and Flutter Web (details page). No screenshots or videos are used.
