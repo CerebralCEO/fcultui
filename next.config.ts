@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // "Templates" became the Explore wall
+  redirects() {
+    return [{ source: "/templates", destination: "/explore", permanent: true }];
+  },
 };
 
 export default nextConfig;

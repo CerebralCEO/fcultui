@@ -11,7 +11,7 @@ import FadeImg from "./FadeImg";
 const ease = [0.16, 1, 0.3, 1] as const;
 const modes: SearchMode[] = ["screens", "templates", "tools"];
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
-const base = (m: SearchMode) => `/${m}`;
+const base = (m: SearchMode) => (m === "templates" ? "/explore" : `/${m}`);
 
 type Result = { title: string; thumb?: string; swatch?: string; meta?: string; href?: string };
 

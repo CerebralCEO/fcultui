@@ -12,7 +12,7 @@ const ease = [0.16, 1, 0.3, 1] as const;
 
 const main = [
   { href: "/screens", label: "Screens" },
-  { href: "/templates", label: "Templates" },
+  { href: "/explore", label: "Explore" },
   { href: "/tools", label: "Tools" },
 ];
 const site = [

@@ -557,6 +557,28 @@ This page follows the Aceternity component-page anatomy, built only from FCult t
 - **More screens**: a 3-column `.posts.screens` grid of regular screen tiles.
 - **TOC**: a hairline left rule; the active item gets a 2px ink marker that slides with a framer `layoutId` spring.
 
+### Explore Wall (`/explore`, formerly Templates)
+An immersive, applama-style wall of **every screen of every flow** (92 tiles). The site header and footer are hidden and the wall draws its own floating bar. Code: `components/explore/ExploreWall.tsx`.
+- **Grid**:
+  - Full-bleed columns: `cols = round((vw − gap) / 270)`, clamped to 2–9, with gaps of 30px, 20px below 1100px and 12px below 640px.
+  - Tiles are **frameless** 390 × 844 screens scaled to the column width, radius `colW × 0.075`, with a 1px inset ring.
+  - Visible heights rotate through 844 / 700 / 540 / 760 / 620 logical px for a masonry rhythm.
+  - The tile order is a seeded, deterministic shuffle.
+- **Infinite engine**:
+  - Each column track holds its tile sequence twice and is translated by `-(((current × speed + phase) mod H) + H) mod H`, which wraps **both upward and downward** forever.
+  - Column speeds vary 0.84–1.14 for parallax.
+  - Inputs: wheel, pointer/touch drag (1.25× with momentum), and ↑ ↓ / PageUp / PageDown / Space.
+  - Smoothing is frame-rate independent (lerp 0.1 at 60fps) and runs on the GSAP ticker; React never re-renders per frame.
+  - An idle drift of 26px/s eases to 0 while interacting or hovering, and is disabled under reduced motion.
+- **Tile hover**: scales to 1.03 with a deep shadow, plays the screen's animation, and fades in a bottom meta strip (30px app icon, 14px/510 title, 12px category). Pro tiles show a glass lock. A drag never opens a tile.
+- **Entrance**: columns rise or fall 90px alternately with a de-blur (1.4s expo, staggered from the centre).
+- **Floating bar**: glass pills (`rgba(18,18,18,.62)`, blur 22 / saturate 180%).
+  - Left: the brand pill (48px).
+  - Centre: a search pill (max 470px) with live multi-word filtering, a result count and the `/` shortcut (it overrides the global search modal on this page).
+  - Right: a 48px close circle (history back) and a white "Get started" pill.
+  - On phones only the brand icon, search and close remain, at 44px.
+- 150px (top) and 110px (bottom) canvas fades.
+
 ### Footer
 **`footer`**: a hairline top border, the logo mark with a one-line pitch, then three menus (Site / Resources / Social) whose headings are `{colors.body}` at 60% opacity. The bottom bar holds the © line, the social links (below 1500px) and the `Alt + M` theme switch. Columns fade up with a 70ms stagger on scroll.
 
@@ -622,4 +644,5 @@ Devices re-measure with ResizeObserver and scale to fit. Remote images (tool ico
 - `npx fcultui` CLI commands are displayed but the CLI does not exist yet.
 - The light theme is ported from the original's tokens, but the device mockups and promo tile have not been separately tuned for it.
 - Tag filtering, pagination and bookmarks exist only as UI; they are not wired to data yet.
+- The Explore wall renders live HTML screens (184 tiles incl. the wrap copy). Once real captures exist, tiles should switch to poster images and hover videos (PLAN §2.1).
 - Demo screens are HTML placeholders; the real screens will be captured Flutter/RN renders.

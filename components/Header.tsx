@@ -12,17 +12,20 @@ import type { SearchMode } from "@/lib/data";
 
 const left = [
   { href: "/screens", label: "Screens" },
-  { href: "/templates", label: "Templates" },
+  { href: "/explore", label: "Explore" },
   { href: "/tools", label: "Tools" },
 ];
 
 export const modeForPath = (p: string): SearchMode =>
-  p.startsWith("/templates") ? "templates" : p.startsWith("/tools") ? "tools" : "screens";
+  p.startsWith("/explore") ? "templates" : p.startsWith("/tools") ? "tools" : "screens";
 
 export default function Header() {
   const pathname = usePathname();
   const { openSearch, bookmarks } = useApp();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Explore is immersive: it draws its own floating bar
+  if (pathname.startsWith("/explore")) return null;
 
   return (
     <>

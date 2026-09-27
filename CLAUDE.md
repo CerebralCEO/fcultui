@@ -52,6 +52,12 @@ Motion, GSAP, Lenis, Tailwind v4 utilities without preflight).
 - Framework-dependent code renders both panes; visibility is driven by `html[data-fw]` (set before paint by the boot
   script and by `setFramework`). Never switch code by conditional rendering — it would flash and shift layout.
 
+## Explore wall
+- `/explore` (the old `/templates`, redirected in `next.config.ts`) is immersive: `Header`, `Footer` return null there,
+  Lenis is stopped, and `ExploreWall` portals a fixed wall to `<body>`. Its scroll is a custom infinite engine on the
+  GSAP ticker (refs + direct transforms — never React state per frame).
+- Every screen of every flow is a tile; links go to `/screens/<slug>` (`#flow` for non-cover screens).
+
 ## Motion
 - Reveals use GSAP with `expo.out` / `--ease-out-expo` `cubic-bezier(0.16,1,0.3,1)`, 1.1–1.25s, always inside
   `gsap.matchMedia("(prefers-reduced-motion: no-preference)")`.

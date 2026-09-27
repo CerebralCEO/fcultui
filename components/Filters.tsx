@@ -109,7 +109,7 @@ export default function Filters({
     { scope: sectionRef }
   );
 
-  const base = `/${mode}`;
+  const base = mode === "templates" ? "/explore" : `/${mode}`;
 
   return (
     <>

@@ -64,7 +64,7 @@ function NavPeek({ peek }: { peek: { s: Screen; y: number; x: number } | null })
 const GUIDE = [
   { href: "/about", label: "Introduction" },
   { href: "/screens", label: "All screens" },
-  { href: "/templates", label: "App kits" },
+  { href: "/explore", label: "Explore" },
   { href: "/tools", label: "Tools" },
 ];
 
@@ -96,7 +96,7 @@ const I = ({ d }: { d: React.ReactNode }) => (
 const GUIDE_ICONS: Record<string, React.ReactNode> = {
   "/about": <I d={<><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></>} />,
   "/screens": <I d={<><rect x="5" y="2" width="14" height="20" rx="3" /><path d="M10 18h4" /></>} />,
-  "/templates": <I d={<><path d="m12 2 9 5-9 5-9-5 9-5Z" /><path d="m3 12 9 5 9-5" /><path d="m3 17 9 5 9-5" /></>} />,
+  "/explore": <I d={<><path d="m12 2 9 5-9 5-9-5 9-5Z" /><path d="m3 12 9 5 9-5" /><path d="m3 17 9 5 9-5" /></>} />,
   "/tools": <I d={<><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4 2.5-2.5Z" /></>} />,
 };
 

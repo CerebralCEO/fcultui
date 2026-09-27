@@ -3,13 +3,11 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import type { AppKit, Promo, Screen } from "@/lib/data";
+import type { Promo, Screen } from "@/lib/data";
 import { BookmarkIcon, CheckIcon, CodeIcon, CopyIcon, FlutterIcon, LockIcon, ReactIcon } from "./icons";
 import FrameworkSwitch from "./FrameworkSwitch";
 import { useApp } from "./Providers";
-import { DeviceFan } from "./device/Device";
 import ScreenCarousel from "./ScreenCarousel";
-import { screenRegistry } from "./screens";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -202,29 +200,6 @@ export function PromoCard({ promo }: { promo: Promo }) {
           <p>{promo.title}</p>
         </div>
       </div>
-    </div>
-  );
-}
-
-export function KitCard({ kit }: { kit: AppKit }) {
-  const { platform } = useApp();
-  const { ref, playing, handlers } = usePlayback<HTMLDivElement>();
-  const id = `k-${kit.slug}`;
-  const items = kit.screens.map((d) => {
-    const { tone, Component } = screenRegistry[d];
-    return { tone, node: <Component /> };
-  });
-
-  return (
-    <div className={`post template kit${playing ? " is-playing" : ""}`} data-card ref={ref} {...handlers}>
-      <div className="media tile">
-        <Link href="/templates" className="tile-link" aria-label={`${kit.title} app kit`}>
-          <DeviceFan bare items={items} platform={platform} playing={playing} accent={kit.accent} fit={0.78} />
-        </Link>
-        <TileBadges badge="3 screens" />
-        <TileBar slug={kit.slug} saveId={id} />
-      </div>
-      <AppMeta title={kit.title} tagline={`${kit.category} app kit`} accent={kit.accent} href="/templates" />
     </div>
   );
 }

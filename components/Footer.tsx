@@ -8,6 +8,7 @@ import { useGSAP } from "@gsap/react";
 import { LogoIcon } from "./icons";
 import { useApp } from "./Providers";
 import { site } from "@/lib/site";
+import { usePathname } from "next/navigation";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -23,7 +24,7 @@ const siteLinks = [
 const resources = [
   ["Flutter screens", "/screens"],
   ["React Native screens", "/screens"],
-  ["App templates", "/templates"],
+  ["Explore all screens", "/explore"],
   ["Tools for developers", "/tools"],
   ["Onboarding screens", "/screens?tag=onboarding"],
   ["E-commerce screens", "/screens?tag=e-commerce"],
@@ -39,6 +40,7 @@ const social = [
 export default function Footer() {
   const { theme, toggleTheme } = useApp();
   const ref = useRef<HTMLElement>(null);
+  const pathname = usePathname();
 
   useGSAP(
     () => {
@@ -56,6 +58,8 @@ export default function Footer() {
     },
     { scope: ref }
   );
+
+  if (pathname.startsWith("/explore")) return null;
 
   return (
     <footer className="footer" ref={ref}>

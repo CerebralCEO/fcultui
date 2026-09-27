@@ -43,17 +43,27 @@ export default function SmoothScroll() {
     };
   }, []);
 
-  // Freeze page scroll while a modal is open
+  // Freeze page scroll while a modal is open, and on Explore (the wall runs its own infinite engine)
   useEffect(() => {
-    if (searchOpen) lenis?.stop();
+    if (searchOpen || pathname.startsWith("/explore")) lenis?.stop();
     else lenis?.start();
-  }, [searchOpen]);
+  }, [searchOpen, pathname]);
 
-  // Reset to top on route change
+  // Reset to top on route change — or glide to the #section a link asked for
   useEffect(() => {
     lenis?.scrollTo(0, { immediate: true });
     window.scrollTo(0, 0);
     requestAnimationFrame(() => ScrollTrigger.refresh());
+
+    const id = window.location.hash.slice(1);
+    if (!id || id === "code") return; // #code is handled by the preview panel itself
+    const t = setTimeout(() => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (lenis) lenis.scrollTo(el, { offset: -90, duration: 1.4 });
+      else el.scrollIntoView({ behavior: "smooth" });
+    }, 450);
+    return () => clearTimeout(t);
   }, [pathname]);
 
   return null;
