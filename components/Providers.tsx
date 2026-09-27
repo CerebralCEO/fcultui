@@ -83,6 +83,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   const setFramework = useCallback((f: Framework) => {
     write("mg-framework", f);
+    document.documentElement.dataset.fw = f;
     setFrameworkState(f);
   }, []);
 

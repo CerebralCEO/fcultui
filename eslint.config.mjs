@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Flutter / React Native source shipped to users — not part of the Next.js app.
+    "content/**",
   ]),
 ]);
 

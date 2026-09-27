@@ -31,6 +31,7 @@ colors:
   glass: "rgba(24,24,24,0.72)"      # tile toolbar / save button (blur 16px, saturate 170%)
   glass-border: "rgba(255,255,255,0.08)"
   glass-fill: "rgba(255,255,255,0.12)" # buttons inside the glass bar (0.2 on hover)
+  code-background: "#0c0c0c"        # --color--code-background (#fafafa in light)
   # --- Light theme overrides (html.light) ---
   light-canvas: "#ffffff"
   light-body: "#4c4c4c"
@@ -507,6 +508,32 @@ Gallery cards follow Mobbin's anatomy: **tile, then meta row**.
 - **Playback trigger**: on pointer devices a preview plays on hover. On touch devices it plays while the card sits in the middle 30% of the viewport (IntersectionObserver).
 - **Search modal**: 500px wide, 120px from the top, radius 14. It opens with a spring (380/34) from y30 and scale .98, and closes on ESC. The mode switch (Screens / Templates / Tools) opens a small 150px menu. The category list items stagger in by 18ms each.
 
+### Screen Detail Page (`/screens/[slug]`)
+This page follows the Aceternity component-page anatomy, built only from FCult tokens:
+- **Grid**: `248px` sticky left rail, then the content column (max 880px), then a `190px` "On this page" TOC at 1300px and above. Columns are separated by `{spacing.page}`-scale gaps (56px). Below 992px only the content column remains.
+- **Left rail** (`.detail-sidebar`): screens grouped by category. Links are 15px `{colors.body}`; the active link gets `{colors.surface-25}` with 8px radius. A lime All-Access card sits at the bottom. The rail has a hairline right border.
+- **Header**:
+  - A breadcrumb (15px) and an h1 at `{typography.display-intro}` size, left-aligned, revealed with SplitText.
+  - A 19px lead paragraph.
+  - Chips (14px pills on `{colors.surface}`). Framework chips use `surface-25` with ink text; Pro screens get a lime chip.
+- **Preview panel**:
+  - A `Segmented` Preview | Code control on the left. Every segmented control is a `{colors.surface}` track with a `{colors.surface-50}` spring pill (500/40).
+  - On the right: the iOS/Android toggle, the solid Flutter/React Native switch, a "Copy prompt" `tool-btn` (36px, `surface-25`) and a 36px fullscreen `tool-icon`.
+  - The panel itself is 680px tall (600px for examples, 560px on mobile), `{colors.surface-subtle}` with a floor radial, hairline border and 18px radius. It holds a framed `<Device>` at 86% fit.
+  - A glass "Replay" pill sits bottom-left and remounts the device so one-shot animations replay.
+  - Switching tabs crossfades: preview blur-scales, code slides 12px, over 0.45s expo.
+  - Fullscreen opens a blurred backdrop portal with a 92% device; ESC closes it.
+- **Code block** (`.code`):
+  - `{colors.code-background}`, hairline border, 14px radius, and a 44px header with the file name in 13px mono plus a Copy button.
+  - Highlighting is done at build time by Shiki (github dark/light dual theme via `--shiki-*` vars), in 13px/1.7 mono with muted line numbers.
+  - **Framework pairs render both panes in one grid cell**; the inactive pane is hidden by `html[data-fw]`, so switching never shifts layout or flashes on load.
+  - Long files collapse to 340px behind a fade and an "Expand" `button-mini`.
+- **Installation**: CLI | Manual segmented control, then a numbered step timeline (hairline left rule, 30px `surface-25` number bubbles with a canvas ring). Manual steps are: dependencies, tokens, source and usage.
+- **Screens in this flow**: one `PreviewPanel` per remaining flow screen, each under a 20px/510 h3.
+- **Props**: a hairline-bordered table (14px muted headers, 15px cells, 13px mono `code` chips on `{colors.surface}`) with Flutter and React Native type columns.
+- **More screens**: a 3-column `.posts.screens` grid of regular screen tiles.
+- **TOC**: a hairline left rule; the active item gets a 2px ink marker that slides with a framer `layoutId` spring.
+
 ### Footer
 **`footer`**: a hairline top border, the logo mark with a one-line pitch, then three menus (Site / Resources / Social) whose headings are `{colors.body}` at 60% opacity. The bottom bar holds the © line, the social links (below 1500px) and the `Alt + M` theme switch. Columns fade up with a 70ms stagger on scroll.
 
@@ -568,7 +595,8 @@ Devices re-measure with ResizeObserver and scale to fit. Remote images (tool ico
 
 ## Known Gaps
 - No error, validation or empty states have been built yet (`{colors.error}` exists but is unused).
-- The code/detail page (Preview / Code tabs, Flutter ⇄ React Native toggle) is not built yet; its layout will follow the Aceternity reference described in `docs/PLAN.md`.
+- The detail page's flow examples reuse the demo HTML screens; live Flutter/RN hosts (PLAN §2.2–2.3) are not wired yet.
+- `npx fcultui` CLI commands are displayed but the CLI does not exist yet.
 - The light theme is ported from the original's tokens, but the device mockups and promo tile have not been separately tuned for it.
 - Tag filtering, pagination and bookmarks exist only as UI; they are not wired to data yet.
 - Demo screens are HTML placeholders; the real screens will be captured Flutter/RN renders.

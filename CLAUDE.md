@@ -39,6 +39,16 @@ Motion, GSAP, Lenis, Tailwind v4 utilities without preflight).
   triggered by `usePlayback` in `components/ScreenCards.tsx` (hover on pointer devices, centred-in-view on touch).
 - The HTML screens in `components/screens/` are placeholders until real Flutter/RN captures replace them (PLAN §2.1).
 
+## Screen source code & detail page
+- Source of truth: `content/code/<design>/screen.dart` + `Screen.tsx` (plus `_shared/tokens.*`). Placeholders
+  `__NAME__`, `__TITLE__`, `__ACCENT__` are filled per screen by `lib/code.ts`, which also Shiki-highlights at build time.
+  `content/` is excluded from the site's tsconfig/eslint — it is Flutter/Expo code, not Next.js code.
+- Both implementations of a design must stay pixel- and timing-identical (same tokens, same durations/easings).
+- `/screens/[slug]` is fully static (`generateStaticParams`). Per-design copy, tags, RN deps and props live in
+  `lib/screen-meta.ts`.
+- Framework-dependent code renders both panes; visibility is driven by `html[data-fw]` (set before paint by the boot
+  script and by `setFramework`). Never switch code by conditional rendering — it would flash and shift layout.
+
 ## Motion
 - Reveals use GSAP with `expo.out` / `--ease-out-expo` `cubic-bezier(0.16,1,0.3,1)`, 1.1–1.25s, always inside
   `gsap.matchMedia("(prefers-reduced-motion: no-preference)")`.

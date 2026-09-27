@@ -13,12 +13,12 @@ const modes: SearchMode[] = ["screens", "templates", "tools"];
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 const base = (m: SearchMode) => `/${m}`;
 
-type Result = { title: string; thumb?: string; swatch?: string; meta?: string };
+type Result = { title: string; thumb?: string; swatch?: string; meta?: string; href?: string };
 
 function resultsFor(mode: SearchMode, q: string): Result[] {
   const has = (s: string) => s.toLowerCase().includes(q);
   if (mode === "screens")
-    return screens.filter((s) => has(s.title) || has(s.category)).map((s) => ({ title: s.title, swatch: s.accent, meta: s.category }));
+    return screens.filter((s) => has(s.title) || has(s.category)).map((s) => ({ title: s.title, swatch: s.accent, meta: s.category, href: `/screens/${s.slug}` }));
   if (mode === "templates")
     return appKits.filter((k) => has(k.title) || has(k.category)).map((k) => ({ title: k.title, swatch: k.accent, meta: k.category }));
   return tools.filter((t) => has(t.title) || has(t.category)).map((t) => ({ title: t.title, thumb: t.icon, meta: t.category }));
@@ -206,7 +206,7 @@ export default function SearchModal() {
                             <ul className="search-results-list">
                               {postHits.map((r) => (
                                 <li key={r.title}>
-                                  <Link href={base(searchMode)} onClick={closeSearch}>
+                                  <Link href={r.href ?? base(searchMode)} onClick={closeSearch}>
                                     <span className="search-result-thumb" style={r.swatch ? { background: r.swatch } : undefined}>
                                       {r.thumb && <FadeImg src={r.thumb} alt="" />}
                                     </span>

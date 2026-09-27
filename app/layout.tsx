@@ -27,8 +27,8 @@ export const viewport: Viewport = {
   themeColor: "#000000",
 };
 
-// Runs before paint: restores the saved theme and flags JS so reveal targets start hidden (no flash)
-const bootScript = `(function(){try{var d=document.documentElement;d.classList.add('js');if(JSON.parse(localStorage.getItem('mg-theme'))==='light')d.classList.add('light')}catch(e){}})();`;
+// Runs before paint: restores theme + framework preference and flags JS so reveal targets start hidden (no flash)
+const bootScript = `(function(){try{var d=document.documentElement;d.classList.add('js');if(JSON.parse(localStorage.getItem('mg-theme'))==='light')d.classList.add('light');if(JSON.parse(localStorage.getItem('mg-framework'))==='rn')d.dataset.fw='rn'}catch(e){}})();`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

@@ -5,7 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { AppKit, Promo, Screen } from "@/lib/data";
 import { BookmarkIcon, CheckIcon, CodeIcon, CopyIcon, FlutterIcon, LockIcon, ReactIcon } from "./icons";
-import { useApp, type Framework } from "./Providers";
+import FrameworkSwitch from "./FrameworkSwitch";
+import { useApp } from "./Providers";
 import { DeviceFan } from "./device/Device";
 import ScreenCarousel from "./ScreenCarousel";
 import { screenRegistry } from "./screens";
@@ -56,32 +57,6 @@ function BookmarkButton({ id }: { id: string }) {
   );
 }
 
-/** Flutter ⇄ React Native switch — global preference, shared with the code page. */
-function FrameworkSwitch() {
-  const { framework, setFramework } = useApp();
-  const opts: { id: Framework; label: string; Icon: typeof FlutterIcon }[] = [
-    { id: "flutter", label: "Flutter", Icon: FlutterIcon },
-    { id: "rn", label: "RN", Icon: ReactIcon },
-  ];
-  return (
-    <div className="fw-switch" data-fw={framework} role="radiogroup" aria-label="Framework">
-      <span className="fw-pill" aria-hidden />
-      {opts.map(({ id, label, Icon }) => (
-        <button
-          key={id}
-          role="radio"
-          aria-checked={framework === id}
-          className={framework === id ? "active" : undefined}
-          onClick={() => setFramework(id)}
-        >
-          <Icon />
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 function CopyButton({ slug }: { slug: string }) {
   const { framework } = useApp();
   const [copied, setCopied] = useState(false);
@@ -114,7 +89,7 @@ function CopyButton({ slug }: { slug: string }) {
   );
 }
 
-function TileBar({ slug, pro, saveId }: { slug: string; pro?: boolean; saveId?: string }) {
+function TileBar({ slug, pro, saveId, codeHref = "/screens" }: { slug: string; pro?: boolean; saveId?: string; codeHref?: string }) {
   return (
     <div className="tile-bar">
       <FrameworkSwitch />
@@ -129,7 +104,7 @@ function TileBar({ slug, pro, saveId }: { slug: string; pro?: boolean; saveId?: 
       ) : (
         <CopyButton slug={slug} />
       )}
-      <Link href="/screens" className="tile-bar-icon" aria-label="View code">
+      <Link href={codeHref} className="tile-bar-icon" aria-label="View code">
         <CodeIcon />
       </Link>
       {saveId && <BookmarkButton id={saveId} />}
@@ -178,7 +153,7 @@ export function ScreenCard({ screen }: { screen: Screen }) {
       <div className="media tile">
         <ScreenCarousel
           id={screen.slug}
-          href="/screens"
+          href={`/screens/${screen.slug}`}
           label={screen.title}
           flow={screen.flow}
           platform={platform}
@@ -186,9 +161,9 @@ export function ScreenCard({ screen }: { screen: Screen }) {
           accent={screen.accent}
         />
         <TileBadges badge={screen.badge} pro={screen.pro} />
-        <TileBar slug={screen.slug} pro={screen.pro} saveId={`s-${screen.slug}`} />
+        <TileBar slug={screen.slug} pro={screen.pro} saveId={`s-${screen.slug}`} codeHref={`/screens/${screen.slug}#code`} />
       </div>
-      <AppMeta title={screen.title} tagline={screen.tagline} accent={screen.accent} href="/screens" />
+      <AppMeta title={screen.title} tagline={screen.tagline} accent={screen.accent} href={`/screens/${screen.slug}`} />
     </div>
   );
 }

@@ -150,7 +150,7 @@ fcultui/                      (pnpm + Turborepo monorepo)
 | Phase | কাজ | Status |
 |---|---|---|
 | 0 | Minimal Gallery-র pixel-perfect shell, animation, CSS iOS/Android device, mockup cards, DESIGN.md, CLAUDE.md, এই plan | ✅ সম্পন্ন |
-| 1 | Content model + `/screens/[slug]` detail page (demo content দিয়ে)। Shiki code blocks, Flutter/RN toggle, Preview/Code tabs, Installation section | পরবর্তী |
+| 1 | Content model + `/screens/[slug]` detail page (demo content দিয়ে)। Shiki code blocks, Flutter/RN toggle, Preview/Code tabs, Installation section | ✅ সম্পন্ন (২৩টা static page, ১২টা design × ২ framework-এর code) |
 | 2 | Monorepo + tokens package + প্রথম ৫টা real screen (Flutter + RN) | |
 | 3 | Capture pipeline: poster/loop video, CSS device-এ `<video>` দিয়ে hover preview, parity diff CI | |
 | 4 | Live preview: flutter-host (multi-view, deferred), rn-host, QR/Snack | |
