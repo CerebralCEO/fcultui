@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import SearchModal from "@/components/SearchModal";
 import SmoothScroll from "@/components/SmoothScroll";
 import { InlineScript } from "@/components/InlineScript";
+import { site } from "@/lib/site";
 
 // Same file the original ships: Inter 5.3.0, latin, variable weight (enables the 510 heading weight)
 const inter = localFont({
@@ -18,8 +19,8 @@ const inter = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Minimal Gallery – Hand-picked web design inspiration, premium templates, tools and more",
-  description: "Minimal Gallery is a curated source of website design inspiration for creatives. Since 2013.",
+  title: `${site.name} – ${site.tagline}`,
+  description: site.description,
 };
 
 export const viewport: Viewport = {

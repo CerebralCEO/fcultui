@@ -7,16 +7,17 @@ import { motion } from "framer-motion";
 import { BookmarkIcon, SearchIcon } from "./icons";
 import { useApp } from "./Providers";
 import MobileMenu from "./MobileMenu";
+import { site } from "@/lib/site";
 import type { SearchMode } from "@/lib/data";
 
 const left = [
-  { href: "/websites", label: "Websites" },
+  { href: "/screens", label: "Screens" },
   { href: "/templates", label: "Templates" },
   { href: "/tools", label: "Tools" },
 ];
 
 export const modeForPath = (p: string): SearchMode =>
-  p.startsWith("/templates") ? "templates" : p.startsWith("/tools") ? "tools" : "websites";
+  p.startsWith("/templates") ? "templates" : p.startsWith("/tools") ? "tools" : "screens";
 
 export default function Header() {
   const pathname = usePathname();
@@ -52,7 +53,7 @@ export default function Header() {
           <div className="header-menu-center">
             <ul className="menu">
               <li>
-                <Link href="/">Minimal Gallery</Link>
+                <Link href="/">{site.name}</Link>
               </li>
             </ul>
           </div>

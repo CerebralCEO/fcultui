@@ -3,22 +3,23 @@ import PostsHeader from "@/components/PostsHeader";
 import Filters from "@/components/Filters";
 import PostsGrid from "@/components/PostsGrid";
 import Pagination from "@/components/Pagination";
-import { TemplateCard } from "@/components/Cards";
-import { templates, templateTags } from "@/lib/data";
+import { KitCard } from "@/components/ScreenCards";
+import { appKits, kitTags } from "@/lib/data";
+import { site } from "@/lib/site";
 
-export const metadata: Metadata = { title: "The best website templates – Minimal Gallery" };
+export const metadata: Metadata = { title: `App templates – ${site.name}` };
 
 export default function TemplatesPage() {
   return (
     <>
       <PostsHeader
-        title={["Website templates", "for creatives"]}
-        subtitle="Discover professionally designed website templates for Framer, Webflow, WordPress and more."
+        title={["App templates", "for creatives"]}
+        subtitle="Complete multi-screen app kits, each shipped in both Flutter and React Native with identical UI."
       />
-      <Filters tags={templateTags} mode="templates" showAll={false} />
+      <Filters tags={kitTags} mode="templates" showAll={false} showPlatform />
       <PostsGrid className="posts templates">
-        {templates.map((t) => (
-          <TemplateCard key={t.title} post={t} />
+        {appKits.map((k) => (
+          <KitCard key={k.slug} kit={k} />
         ))}
       </PostsGrid>
       <Pagination base="/templates" last={8} nextLabel="Next" />

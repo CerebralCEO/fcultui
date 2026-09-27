@@ -3,24 +3,24 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { searchMenus, slug, templates, tools, websites, type SearchMode } from "@/lib/data";
+import { appKits, screens, searchMenus, slug, tools, type SearchMode } from "@/lib/data";
 import { ChevronsUpDownIcon, CloseIcon, DotsIcon, SearchIcon } from "./icons";
 import { useApp } from "./Providers";
 import FadeImg from "./FadeImg";
 
 const ease = [0.16, 1, 0.3, 1] as const;
-const modes: SearchMode[] = ["websites", "templates", "tools"];
+const modes: SearchMode[] = ["screens", "templates", "tools"];
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 const base = (m: SearchMode) => `/${m}`;
 
-type Result = { title: string; thumb: string; meta?: string };
+type Result = { title: string; thumb?: string; swatch?: string; meta?: string };
 
 function resultsFor(mode: SearchMode, q: string): Result[] {
   const has = (s: string) => s.toLowerCase().includes(q);
-  if (mode === "websites")
-    return websites.filter((w) => !w.sponsor && has(w.title)).map((w) => ({ title: w.title, thumb: w.image, meta: w.time }));
+  if (mode === "screens")
+    return screens.filter((s) => has(s.title) || has(s.category)).map((s) => ({ title: s.title, swatch: s.accent, meta: s.category }));
   if (mode === "templates")
-    return templates.filter((t) => has(t.title) || has(t.platform ?? "")).map((t) => ({ title: t.title, thumb: t.image, meta: t.platform }));
+    return appKits.filter((k) => has(k.title) || has(k.category)).map((k) => ({ title: k.title, swatch: k.accent, meta: k.category }));
   return tools.filter((t) => has(t.title) || has(t.category)).map((t) => ({ title: t.title, thumb: t.icon, meta: t.category }));
 }
 
@@ -207,8 +207,8 @@ export default function SearchModal() {
                               {postHits.map((r) => (
                                 <li key={r.title}>
                                   <Link href={base(searchMode)} onClick={closeSearch}>
-                                    <span className="search-result-thumb">
-                                      <FadeImg src={r.thumb} alt="" />
+                                    <span className="search-result-thumb" style={r.swatch ? { background: r.swatch } : undefined}>
+                                      {r.thumb && <FadeImg src={r.thumb} alt="" />}
                                     </span>
                                     <span>{r.title}</span>
                                     {r.meta && <em className="result-meta">{r.meta}</em>}

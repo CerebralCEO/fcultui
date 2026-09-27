@@ -1,19 +1,4 @@
-const CDN = "https://21ef0880.delivery.rocketcdn.me/wp-content/uploads";
 const MG = "https://minimal.gallery/wp-content/uploads";
-
-export type Website = {
-  title: string;
-  image: string;
-  time?: string;
-  url?: string;
-  sponsor?: boolean;
-};
-
-export type Template = {
-  title: string;
-  image: string;
-  platform?: string;
-};
 
 export type Tool = {
   title: string;
@@ -23,64 +8,6 @@ export type Tool = {
   link?: string;
   promo?: { code: string; off: string };
 };
-
-export const websites: Website[] = [
-  { title: "Provider Studio", image: `${CDN}/2026/09/provider.studio-900x500.jpg`, time: "1 day ago", url: "http://provider.studio" },
-  { title: "ESR Bespoke", image: `${CDN}/2026/08/esrbespoke-900x500.jpg`, time: "1 day ago", url: "https://www.esrbespoke.au" },
-  { title: "Nomad Labs", image: `${CDN}/2026/08/nomadlabs.es_-900x500.jpg`, time: "2 days ago", url: "https://nomadlabs.es" },
-  {
-    title: "Show your work to the design community. Submit your website.",
-    image: "https://21ef0880.delivery.rocketcdn.me/wp-content/themes/minimalgallery/assets/img/gjest/readymag-sep-2026.jpg",
-    url: "https://readymag.com/websites-of-the-year/",
-    sponsor: true,
-  },
-  { title: "BSWT", image: `${CDN}/2026/08/bswt.tv_-900x500.jpg`, time: "3 days ago", url: "https://bswt.tv" },
-  { title: "The Reach", image: `${CDN}/2026/08/thereach.travel-900x500.jpg`, time: "4 days ago", url: "https://thereach.travel" },
-  { title: "Joshua Baker", image: `${CDN}/2026/08/joshuabaker.com_-900x500.jpg`, time: "5 days ago", url: "https://www.joshuabaker.com" },
-  { title: "TakeControl", image: `${CDN}/2026/08/gettakecontrol-900x500.jpg`, time: "6 days ago", url: "https://gettakecontrol.app/en/" },
-  { title: "United Flags of Fashion", image: `${CDN}/2026/08/uff.cfda_.com_-900x500.jpg`, time: "1 week ago", url: "https://uff.cfda.com" },
-  { title: "LinkLetter", image: `${CDN}/2026/08/linkletter.press_-900x500.jpg`, time: "1 week ago", url: "http://linkletter.press" },
-  { title: "Driftime Impact Report", image: `${CDN}/2026/08/2025.driftime.com_-900x500.jpg`, time: "1 week ago", url: "https://2025.driftime.com" },
-  { title: "Kiara Di Gregorio", image: `${CDN}/2026/08/kiaradigregorio.com_-900x500.jpg`, time: "2 weeks ago", url: "https://kiaradigregorio.com" },
-  { title: "Onœra", image: `${CDN}/2026/08/onoera.com_-900x500.jpg`, time: "2 weeks ago", url: "https://onoera.com" },
-  { title: "Sonderdays", image: `${CDN}/2026/08/sonderdays.com_-900x500.jpg`, time: "2 weeks ago", url: "https://www.sonderdays.com" },
-  { title: "Watts Pet", image: `${CDN}/2026/08/wattspet.com_-900x500.jpg`, time: "2 weeks ago", url: "https://wattspet.com" },
-  { title: "Goodside", image: `${CDN}/2026/08/goodside.studio-900x500.jpg`, time: "2 weeks ago", url: "https://www.goodside.studio" },
-  { title: "Eternal Blue", image: `${CDN}/2026/08/eternalblue.co_.nz_-900x500.jpg`, time: "2 weeks ago", url: "https://eternalblue.co.nz" },
-  { title: "Buena", image: `${CDN}/2026/08/buena.com_-900x500.jpg`, time: "2 weeks ago", url: "https://buena.com/en/home" },
-  { title: "Samuel Räikkönen", image: `${CDN}/2026/08/honest.fi_-900x500.jpg`, time: "3 weeks ago", url: "https://honest.fi" },
-  { title: "Gabriel Beaugonin", image: `${CDN}/2026/08/gabrielbeaugonin.com_-900x500.jpg`, time: "3 weeks ago", url: "https://www.gabrielbeaugonin.com" },
-  { title: "Boc.Studio", image: `${CDN}/2026/08/boc.studio-900x500.jpg`, time: "3 weeks ago", url: "https://boc.studio" },
-  { title: "Cozy Journal", image: `${CDN}/2026/08/cozyjournal.app_-900x500.jpg`, time: "3 weeks ago", url: "https://cozyjournal.app" },
-  { title: "Denmu", image: `${CDN}/2026/08/denmu.com_-900x500.jpg`, time: "3 weeks ago", url: "https://denmu.com" },
-  { title: "Philip Readman", image: `${CDN}/2026/07/philipreadman.com_-900x500.jpg`, time: "3 weeks ago", url: "https://www.philipreadman.com" },
-];
-
-export const templates: Template[] = [
-  { title: "Archiste", platform: "Framer", image: `${MG}/2026/07/framer-archiste-900x500.jpg` },
-  { title: "Floffice", platform: "Framer", image: `${MG}/2026/07/framer-floffice-900x500.jpg` },
-  { title: "Sorae", platform: "Framer", image: `${MG}/2026/07/framer-sorae-900x500.jpg` },
-  { title: "Orchid", platform: "Framer", image: `${MG}/2026/07/framer-orchid-900x500.jpg` },
-  { title: "Maravilla", platform: "Framer", image: `${MG}/2026/07/framer-maravilla-900x500.jpg` },
-  { title: "People Work", platform: "Framer", image: `${MG}/2026/07/framer-peoplework-900x500.jpg` },
-  { title: "Percy Studio", platform: "Framer", image: `${MG}/2026/07/framer-percyjackson-900x500.jpg` },
-  { title: "Salient", platform: "Framer", image: `${MG}/2026/07/framer-salient-900x500.jpg` },
-  { title: "Rep Republic", platform: "Framer", image: `${MG}/2026/07/framer-rep-republic-900x500.jpg` },
-  { title: "Stayor", platform: "Framer", image: `${MG}/2026/07/framer-stayor-900x500.jpg` },
-  { title: "Oakline", platform: "Framer", image: `${MG}/2026/07/framer-oakline-900x500.jpg` },
-  { title: "Das Studio", platform: "Framer", image: `${MG}/2026/07/framer-dasstudio-900x500.jpg` },
-  { title: "Presensio", platform: "Framer", image: `${MG}/2026/07/framer-presensio-900x500.jpg` },
-  { title: "Millls", platform: "Readymag", image: `${MG}/2026/07/readymag-mills-900x500.jpg` },
-  { title: "Aurevia", platform: "Framer", image: `${MG}/2026/03/aureviatravels.framer.website_-900x500.png` },
-  { title: "Field Theory", platform: "Framer", image: `${MG}/2026/02/fieldtheory.framer.website_-1-900x500.png` },
-  { title: "RAWLINE", platform: "Framer", image: `${MG}/2026/02/rawline.framer.website_-900x500.png` },
-  { title: "BrandKit", platform: "Framer", image: `${MG}/2026/02/brandkitpro.framer.website_-900x500.png` },
-  { title: "NOIRI", platform: "Framer", image: `${MG}/2026/02/noiristudio.framer.website_-900x500.png` },
-  { title: "SAVORY", platform: "Framer", image: `${MG}/2026/02/savoryblog.framer.website_-900x500.png` },
-  { title: "Neuronix", platform: "Framer", image: `${MG}/2026/01/neuronix.framer.ai_-900x500.png` },
-  { title: "Bruja", platform: "Framer", image: `${MG}/2026/01/bruja.framer.website_-900x500.png` },
-  { title: "Fortify Hugo", image: `${MG}/2026/01/fortify-hugo.vercel.app_-900x500.png` },
-];
 
 export const tools: Tool[] = [
   { title: "FontBase", category: "Fonts", icon: `${MG}/2026/07/tool-icon-fontbase.png`, description: "The font manager made by designers, for designers. Lightning fast, with a beautiful interface, and totally free", link: "fontba.se" },
@@ -109,18 +36,6 @@ export const tools: Tool[] = [
   { title: "PostingCat", category: "Social media", icon: `${MG}/2025/05/posting-cat.webp`, description: "Simplify your social media management and scheduling", link: "postingcat.com" },
 ];
 
-export const websiteTags = [
-  "AI", "Portfolio", "Personal", "Startup", "One page", "Agency", "E-commerce", "Branding", "Tools", "Fashion",
-  "SAAS", "Finance", "Type foundry", "Non-profit & charity", "Crypto & web3", "Architecture & interior design",
-  "Animation", "Consulting", "Programming", "Software", "Online Gallery", "Directory", "Food & drink",
-  "Museum & gallery", "Real estate", "Photography", "Entertainment", "Product", "App", "Music", "Science",
-  "Education", "Healthcare", "Blog", "Production Studio", "Research", "Pricing",
-];
-
-export const templateTags = [
-  "Readymag", "Framer", "Webflow", "WordPress", "JavaScript", "Squarespace", "Shopify", "Super", "Tailwind", "Bootstrap", "Astro",
-];
-
 export const toolTags = [
   "Analytics", "Audio", "Design", "Productivity", "No-code builders", "Development", "SEO & marketing", "Framer",
   "Webflow", "Color", "Icons", "Social media", "Brand management", "Customer support", "Fonts", "Feedback",
@@ -136,18 +51,18 @@ const parse = (s: string): Count[] =>
     return [n, Number(c)];
   });
 
-export type SearchMode = "websites" | "templates" | "tools";
+export type SearchMode = "screens" | "templates" | "tools";
 
 export const searchMenus: Record<SearchMode, { label: string; items: Count[] }> = {
-  websites: {
-    label: "Types",
+  screens: {
+    label: "Categories",
     items: parse(
-      "Advertising|8,Agency|756,AI|55,Animation|22,Annual Report|1,App|60,Architecture & interior design|119,Art|6,Audio|8,Automotive|5,B2B|3,Blog|46,Book|7,Branding|84,Catalogue|5,Coaching|4,Code Library|2,Consulting|17,Crypto & web3|20,Directory|19,Documentary|2,E-commerce|142,Editorial|13,Education|27,Entertainment|17,Environmental|9,Fashion|17,Festival & conference|10,Finance|33,Food & drink|39,Games & gaming|4,Healthcare|26,Hiring|2,Hotel & venue|9,Law Firm|3,Legal|2,Magazine|6,Manufacturing|1,Museum & gallery|17,Music|35,Non-profit & charity|19,One page|123,Online Gallery|22,Personal|802,Pets|1,Photography|74,Platform|13,Podcast|6,Portfolio|979,Pricing|96,Product|86,Production Studio|40,Programming|17,Publisher|4,Real estate|24,Record Label|3,Research|17,SAAS|59,Science|23,Security|2,Software|17,Sports|14,Startup|127,Tools|80,Travel|8,Type foundry|24,Venture Capital|5,Wedding|1,Workshop|5,Writer|7"
+      "Authentication|48,Booking|22,Calendar|19,Chat|41,Checkout|27,Crypto|18,Dashboard|64,E-commerce|96,Education|23,Empty states|15,Finance|57,Fitness|34,Food & delivery|29,Health|21,Maps|17,Meditation|12,Music|26,Notifications|14,Onboarding|73,Paywall|16,Podcast|9,Productivity|31,Profile|38,Settings|25,Social|44,Splash|11,Travel|30,Weather|13"
     ),
   },
   templates: {
-    label: "Platforms",
-    items: parse("Astro|5,Bootstrap|1,Framer|123,JavaScript|1,Readymag|22,Shopify|4,Squarespace|4,Super|1,Tailwind|2,Webflow|18,WordPress|1"),
+    label: "App kits",
+    items: parse("Crypto|3,E-commerce|8,Finance|6,Fitness|5,Food & delivery|4,Meditation|2,Music|4,Productivity|5,Social|6,Travel|4,Weather|2"),
   },
   tools: {
     label: "Types",
@@ -159,3 +74,168 @@ export const searchMenus: Record<SearchMode, { label: string; items: Count[] }> 
 
 export const slug = (s: string) =>
   s.toLowerCase().replace(/&/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+/* ================= Screens (mobile UI library) ================= */
+
+/** Demo screen designs rendered in HTML until real Flutter/RN captures replace them (see docs/PLAN.md). */
+export type ScreenDesign =
+  | "onboarding"
+  | "auth"
+  | "finance"
+  | "music"
+  | "shop"
+  | "chat"
+  | "fitness"
+  | "travel"
+  | "meditation"
+  | "weather"
+  | "settings"
+  | "delivery";
+
+export type Screen = {
+  slug: string;
+  title: string;
+  category: string;
+  /** One-line subtitle under the title (Mobbin-style). */
+  tagline: string;
+  design: ScreenDesign;
+  accent: string;
+  time: string;
+  badge?: "New" | "Updated";
+  /** Code is locked behind All-Access. */
+  pro?: boolean;
+  /** Screens shown by the card carousel (first one = cover). */
+  flow: ScreenDesign[];
+};
+
+/** Related screens that make up each app's preview flow (placeholder until real apps ship). */
+const flows: Record<ScreenDesign, ScreenDesign[]> = {
+  onboarding: ["onboarding", "auth", "fitness", "settings"],
+  auth: ["auth", "onboarding", "finance", "settings"],
+  finance: ["finance", "auth", "chat", "settings"],
+  music: ["music", "onboarding", "chat", "settings"],
+  shop: ["shop", "onboarding", "delivery", "auth"],
+  chat: ["chat", "auth", "settings", "onboarding"],
+  fitness: ["fitness", "meditation", "onboarding", "settings"],
+  travel: ["travel", "weather", "auth", "chat"],
+  meditation: ["meditation", "onboarding", "fitness", "settings"],
+  weather: ["weather", "travel", "settings", "onboarding"],
+  settings: ["settings", "auth", "chat", "finance"],
+  delivery: ["delivery", "shop", "chat", "auth"],
+};
+
+export type Promo = { promo: true; title: string; href: string };
+
+const extras: Record<string, Pick<Screen, "tagline"> & Pick<Partial<Screen>, "badge" | "pro">> = {
+  "Bloom Onboarding": { tagline: "Habit tracker welcome flow", badge: "New" },
+  "Nova Sign In": { tagline: "Email & social login", badge: "New" },
+  "Ledger Overview": { tagline: "Banking dashboard & spending", badge: "Updated" },
+  "Vinyl Player": { tagline: "Now playing with live EQ", badge: "New" },
+  "Aura Product": { tagline: "Product detail & add to bag", pro: true },
+  "Hello Chat": { tagline: "1:1 messaging thread", badge: "Updated" },
+  "Pulse Rings": { tagline: "Daily activity rings", pro: true },
+  "Nordic Explore": { tagline: "Destination discovery feed" },
+  "Still Breathe": { tagline: "Guided breathing session", pro: true },
+  "Sky Weather": { tagline: "Current conditions & hourly" },
+  "Quiet Settings": { tagline: "Grouped settings with toggles" },
+  "Dash Tracking": { tagline: "Live courier tracking map", badge: "Updated", pro: true },
+  "Petal Onboarding": { tagline: "Wellness app introduction" },
+  "Vault Sign In": { tagline: "Secure password login", pro: true },
+  "Coin Wallet": { tagline: "Crypto portfolio overview" },
+  "Echo Podcast": { tagline: "Podcast episode player", pro: true },
+  "Terra Store": { tagline: "Eco goods product page" },
+  "Squad Messages": { tagline: "Group chat conversation", pro: true },
+  "Stride Activity": { tagline: "Workout summary & streaks" },
+  "Alpine Booking": { tagline: "Mountain trip booking", pro: true },
+  "Calm Focus": { tagline: "Focus timer & ambience" },
+  "Drizzle Forecast": { tagline: "Rainy day forecast", pro: true },
+  "Parcel Tracking": { tagline: "Package delivery status" },
+};
+
+const s = (title: string, category: string, design: ScreenDesign, accent: string, time: string): Screen => ({
+  slug: slug(title),
+  title,
+  category,
+  design,
+  accent,
+  time,
+  flow: flows[design],
+  ...extras[title],
+});
+
+export const screens: Screen[] = [
+  s("Bloom Onboarding", "Onboarding", "onboarding", "#FF7A45", "1 day ago"),
+  s("Nova Sign In", "Authentication", "auth", "#7C5CFF", "1 day ago"),
+  s("Ledger Overview", "Finance", "finance", "#6D5DF6", "2 days ago"),
+  s("Vinyl Player", "Music", "music", "#FF4D6D", "3 days ago"),
+  s("Aura Product", "E-commerce", "shop", "#E0703A", "4 days ago"),
+  s("Hello Chat", "Chat", "chat", "#2F80ED", "5 days ago"),
+  s("Pulse Rings", "Fitness", "fitness", "#FA114F", "6 days ago"),
+  s("Nordic Explore", "Travel", "travel", "#2B7A78", "1 week ago"),
+  s("Still Breathe", "Meditation", "meditation", "#3CC7B3", "1 week ago"),
+  s("Sky Weather", "Weather", "weather", "#3B82F6", "1 week ago"),
+  s("Quiet Settings", "Settings", "settings", "#34C759", "2 weeks ago"),
+  s("Dash Tracking", "Food & delivery", "delivery", "#FF5A1F", "2 weeks ago"),
+  s("Petal Onboarding", "Onboarding", "onboarding", "#D946EF", "2 weeks ago"),
+  s("Vault Sign In", "Authentication", "auth", "#10B981", "2 weeks ago"),
+  s("Coin Wallet", "Crypto", "finance", "#0EA5E9", "2 weeks ago"),
+  s("Echo Podcast", "Podcast", "music", "#F59E0B", "2 weeks ago"),
+  s("Terra Store", "E-commerce", "shop", "#3F8F5A", "3 weeks ago"),
+  s("Squad Messages", "Social", "chat", "#8B5CF6", "3 weeks ago"),
+  s("Stride Activity", "Fitness", "fitness", "#A6FF00", "3 weeks ago"),
+  s("Alpine Booking", "Booking", "travel", "#B45309", "3 weeks ago"),
+  s("Calm Focus", "Meditation", "meditation", "#818CF8", "3 weeks ago"),
+  s("Drizzle Forecast", "Weather", "weather", "#0F766E", "3 weeks ago"),
+  s("Parcel Tracking", "Maps", "delivery", "#2563EB", "3 weeks ago"),
+];
+
+export const promo: Promo = {
+  promo: true,
+  title: "Get every screen in Flutter & React Native. Go All-Access.",
+  href: "/about",
+};
+
+/** Grid order: the promo occupies slot 4 (pinned to the last column of row 1 by CSS, like the original sponsor). */
+export const screenGrid: (Screen | Promo)[] = [...screens.slice(0, 3), promo, ...screens.slice(3)];
+
+export const screenTags = [
+  "Onboarding", "Authentication", "Dashboard", "Finance", "E-commerce", "Chat", "Social", "Music", "Fitness",
+  "Travel", "Meditation", "Weather", "Settings", "Food & delivery", "Maps", "Crypto", "Booking", "Checkout",
+  "Profile", "Paywall", "Notifications", "Empty states", "Splash", "Calendar", "Productivity", "Education",
+  "Health", "Podcast",
+];
+
+/* ================= App kits (multi-screen templates) ================= */
+
+export type AppKit = {
+  slug: string;
+  title: string;
+  category: string;
+  screens: [ScreenDesign, ScreenDesign, ScreenDesign];
+  accent: string;
+};
+
+const k = (title: string, category: string, screens: AppKit["screens"], accent: string): AppKit => ({
+  slug: slug(title),
+  title,
+  category,
+  screens,
+  accent,
+});
+
+export const appKits: AppKit[] = [
+  k("Ledger", "Finance", ["auth", "finance", "settings"], "#6D5DF6"),
+  k("Aura", "E-commerce", ["onboarding", "shop", "delivery"], "#E0703A"),
+  k("Vinyl", "Music", ["music", "chat", "settings"], "#FF4D6D"),
+  k("Pulse", "Fitness", ["onboarding", "fitness", "meditation"], "#FA114F"),
+  k("Nordic", "Travel", ["travel", "weather", "auth"], "#2B7A78"),
+  k("Hello", "Social", ["auth", "chat", "settings"], "#2F80ED"),
+  k("Still", "Meditation", ["meditation", "onboarding", "settings"], "#3CC7B3"),
+  k("Dash", "Food & delivery", ["shop", "delivery", "chat"], "#FF5A1F"),
+  k("Coin", "Crypto", ["auth", "finance", "chat"], "#0EA5E9"),
+  k("Sky", "Weather", ["weather", "travel", "settings"], "#3B82F6"),
+  k("Terra", "E-commerce", ["shop", "onboarding", "delivery"], "#3F8F5A"),
+  k("Echo", "Music", ["music", "onboarding", "auth"], "#F59E0B"),
+];
+
+export const kitTags = ["Finance", "E-commerce", "Music", "Fitness", "Travel", "Social", "Meditation", "Food & delivery", "Crypto", "Weather", "Productivity"];

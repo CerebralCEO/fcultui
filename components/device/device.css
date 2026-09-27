@@ -1,0 +1,231 @@
+/*
+ * Device mockups — drawn at a fixed design canvas (414 × 868 px, screen 390 × 844 px)
+ * and uniformly scaled by <ScaledDevice>. Never size device parts in relative units.
+ */
+
+.device {
+  --device-w: 414px;
+  --device-h: 868px;
+  --bezel: 12px;
+  --safe-top: 54px;
+  --safe-bottom: 34px;
+  --device-ease: cubic-bezier(0.65, 0, 0.35, 1);
+  position: relative;
+  width: var(--device-w);
+  height: var(--device-h);
+  transform-origin: 0 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Frame ---------- */
+.device-frame {
+  position: absolute;
+  inset: 0;
+  border-radius: 68px;
+  background: linear-gradient(145deg, #5b5b60 0%, #2a2a2d 18%, #1b1b1d 50%, #2c2c2f 82%, #616166 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+    inset 0 0 0 3px #0c0c0d,
+    0 30px 60px -20px rgba(0, 0, 0, 0.6);
+  transition: border-radius 0.6s var(--device-ease), background 0.6s var(--device-ease);
+}
+.device-frame::after {
+  /* inner black bezel */
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 64px;
+  background: #050505;
+  transition: border-radius 0.6s var(--device-ease);
+}
+.device-btn {
+  position: absolute;
+  width: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #3c3c40, #1a1a1c);
+  transition: top 0.6s var(--device-ease), height 0.6s var(--device-ease), opacity 0.4s ease;
+}
+.device-btn.l { left: -3px; }
+.device-btn.r { right: -3px; background: linear-gradient(270deg, #3c3c40, #1a1a1c); }
+.device-btn.b1 { top: 172px; height: 34px; }
+.device-btn.b2 { top: 236px; height: 64px; }
+.device-btn.b3 { top: 312px; height: 64px; }
+.device-btn.b4 { top: 268px; height: 104px; }
+
+/* ---------- Screen ---------- */
+.device-screen {
+  position: absolute;
+  top: var(--bezel);
+  left: var(--bezel);
+  width: 390px;
+  height: 844px;
+  overflow: hidden;
+  border-radius: 56px;
+  background: #000;
+  isolation: isolate;
+  transition: border-radius 0.6s var(--device-ease);
+}
+.device-content {
+  position: absolute;
+  inset: 0;
+}
+
+/* ---------- Status bar ---------- */
+.device-status {
+  position: absolute;
+  z-index: 20;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--safe-top);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 34px 0 50px;
+  color: #fff;
+  font-family: var(--font--family);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  pointer-events: none;
+  transition: padding 0.6s var(--device-ease), height 0.6s var(--device-ease), color 0.3s ease;
+}
+.device[data-tone="light"] .device-status { color: #000; }
+.device-status .icons { display: flex; align-items: center; gap: 7px; }
+.device-status svg { width: auto; display: block; }
+.device-status .ic-signal { height: 12px; }
+.device-status .ic-wifi { height: 12px; }
+.device-status .ic-battery { height: 13px; }
+.device-status .ios-only, .device-status .android-only { transition: opacity 0.35s ease; }
+.device-status .android-only { position: absolute; opacity: 0; }
+
+/* ---------- Camera: Dynamic Island ⇄ punch hole ---------- */
+.device-camera {
+  position: absolute;
+  z-index: 30;
+  top: 11px;
+  left: 50%;
+  width: 124px;
+  height: 36px;
+  border-radius: 20px;
+  background: #000;
+  transform: translateX(-50%);
+  transition: width 0.6s var(--device-ease), height 0.6s var(--device-ease), top 0.6s var(--device-ease),
+    border-radius 0.6s var(--device-ease);
+}
+.device-camera::after {
+  /* lens */
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #2b3448 0%, #0b0e16 55%, #000 100%);
+  transform: translateY(-50%);
+  transition: right 0.6s var(--device-ease);
+}
+
+/* ---------- Home indicator ---------- */
+.device-home {
+  position: absolute;
+  z-index: 20;
+  bottom: 8px;
+  left: 50%;
+  width: 140px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateX(-50%);
+  transition: width 0.6s var(--device-ease), height 0.6s var(--device-ease), bottom 0.6s var(--device-ease),
+    background 0.3s ease;
+}
+.device[data-tone="light"] .device-home { background: rgba(0, 0, 0, 0.85); }
+
+/* ---------- Android variant (Pixel-style) ---------- */
+.device[data-platform="android"] {
+  --safe-top: 42px;
+  --safe-bottom: 24px;
+}
+.device[data-platform="android"] .device-frame {
+  border-radius: 50px;
+  background: linear-gradient(145deg, #3a3c40 0%, #1d1e21 30%, #16171a 60%, #2b2d31 100%);
+}
+.device[data-platform="android"] .device-frame::after { border-radius: 46px; }
+.device[data-platform="android"] .device-screen { border-radius: 38px; }
+.device[data-platform="android"] .device-camera {
+  top: 13px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #0a0a0a;
+}
+.device[data-platform="android"] .device-camera::after { right: 5.5px; }
+.device[data-platform="android"] .device-status {
+  padding: 0 26px 0 30px;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.device[data-platform="android"] .device-status .ios-only { opacity: 0; }
+.device[data-platform="android"] .device-status .android-only { position: static; opacity: 1; }
+.device[data-platform="android"] .device-status .time-ios { display: none; }
+.device:not([data-platform="android"]) .device-status .time-android { display: none; }
+.device[data-platform="android"] .device-home { width: 108px; height: 4px; bottom: 9px; }
+.device[data-platform="android"] .device-btn.l { opacity: 0; }
+.device[data-platform="android"] .device-btn.b4 { top: 196px; height: 72px; }
+.device[data-platform="android"] .device-btn.r.b5 { opacity: 1; }
+.device-btn.r.b5 { top: 300px; height: 120px; opacity: 0; }
+
+/* ---------- Stage / scaling ---------- */
+.device-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.device-scaler {
+  position: relative;
+  flex-shrink: 0;
+  transition: transform 0.9s var(--ease-out-expo);
+}
+.device-scaler.is-measuring { visibility: hidden; }
+
+/* Hover lift on cards */
+.post:hover .device-stage > .device-scaler { transform: translateY(-6px); }
+
+/* App-kit fan (three devices) */
+.device-fan .device-scaler {
+  position: absolute;
+  transition: transform 0.9s var(--ease-out-expo);
+}
+.device-fan .device-scaler:nth-child(1) { transform: translateX(-58%) rotate(-9deg) scale(0.9); z-index: 1; }
+.device-fan .device-scaler:nth-child(2) { z-index: 3; }
+.device-fan .device-scaler:nth-child(3) { transform: translateX(58%) rotate(9deg) scale(0.9); z-index: 2; }
+.post:hover .device-fan .device-scaler:nth-child(1) { transform: translateX(-80%) rotate(-12deg) scale(0.92); }
+.post:hover .device-fan .device-scaler:nth-child(2) { transform: translateY(-6px); }
+.post:hover .device-fan .device-scaler:nth-child(3) { transform: translateX(80%) rotate(12deg) scale(0.92); }
+
+@media (prefers-reduced-motion: reduce) {
+  .device *, .device-scaler { transition: none !important; animation: none !important; }
+}
+
+/* ---------- Bare (frameless) screens — gallery tiles, Mobbin-style ---------- */
+.device-bare { --device-w: 390px; --device-h: 844px; }
+.device-bare .device-screen { top: 0; left: 0; border-radius: 52px; }
+.device-bare[data-platform="android"] .device-screen { border-radius: 34px; }
+.device-scaler.is-bare { border-radius: calc(52px * var(--s)); transition: border-radius 0.6s cubic-bezier(0.65, 0, 0.35, 1), transform 0.9s var(--ease-out-expo), box-shadow 0.6s ease; }
+.device-scaler.is-bare[data-platform="android"] { border-radius: calc(34px * var(--s)); }
+/* Hairline ring drawn in real px on the scaler, so it stays exactly 1px at any scale */
+.device-scaler.is-bare::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+html.light .device-scaler.is-bare::after { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08); }

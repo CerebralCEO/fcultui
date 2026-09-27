@@ -2,20 +2,20 @@ import Intro from "@/components/Intro";
 import Filters from "@/components/Filters";
 import PostsGrid from "@/components/PostsGrid";
 import Pagination from "@/components/Pagination";
-import { WebsiteCard } from "@/components/Cards";
-import { websites, websiteTags } from "@/lib/data";
+import { PromoCard, ScreenCard } from "@/components/ScreenCards";
+import { screenGrid, screenTags } from "@/lib/data";
 
 export default function Home() {
   return (
     <>
       <Intro />
-      <Filters tags={websiteTags} mode="websites" />
-      <PostsGrid className="posts websites">
-        {websites.map((w) => (
-          <WebsiteCard key={w.title} post={w} />
-        ))}
+      <Filters tags={screenTags} mode="screens" showPlatform />
+      <PostsGrid className="posts screens">
+        {screenGrid.map((item) =>
+          "promo" in item ? <PromoCard key="promo" promo={item} /> : <ScreenCard key={item.slug} screen={item} />
+        )}
       </PostsGrid>
-      <Pagination base="/websites" last={131} nextLabel="Older" />
+      <Pagination base="/screens" last={48} nextLabel="Older" />
     </>
   );
 }

@@ -2,8 +2,10 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { SearchMode } from "@/lib/data";
+import type { Platform } from "./device/Device";
 
 type Theme = "dark" | "light";
+export type Framework = "flutter" | "rn";
 
 type Ctx = {
   searchOpen: boolean;
@@ -15,6 +17,10 @@ type Ctx = {
   toggleTheme: () => void;
   bookmarks: string[];
   toggleBookmark: (id: string) => void;
+  platform: Platform;
+  setPlatform: (p: Platform) => void;
+  framework: Framework;
+  setFramework: (f: Framework) => void;
 };
 
 const AppContext = createContext<Ctx | null>(null);
@@ -42,15 +48,19 @@ const write = (key: string, value: unknown) => {
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchMode, setSearchMode] = useState<SearchMode>("websites");
+  const [searchMode, setSearchMode] = useState<SearchMode>("screens");
   const [theme, setThemeState] = useState<Theme>("dark");
   const [bookmarks, setBookmarks] = useState<string[]>([]);
+  const [platform, setPlatformState] = useState<Platform>("ios");
+  const [framework, setFrameworkState] = useState<Framework>("flutter");
 
   // Hydrate persisted state after mount (the inline script in layout already set the html class)
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect */
     setThemeState(document.documentElement.classList.contains("light") ? "light" : "dark");
     setBookmarks(read<string[]>("mg-bookmarks", []));
+    setPlatformState(read<Platform>("mg-platform", "ios"));
+    setFrameworkState(read<Framework>("mg-framework", "flutter"));
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
@@ -65,6 +75,16 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleTheme = useCallback(() => setTheme(theme === "dark" ? "light" : "dark"), [theme, setTheme]);
+
+  const setPlatform = useCallback((p: Platform) => {
+    write("mg-platform", p);
+    setPlatformState(p);
+  }, []);
+
+  const setFramework = useCallback((f: Framework) => {
+    write("mg-framework", f);
+    setFrameworkState(f);
+  }, []);
 
   const openSearch = useCallback((mode?: SearchMode) => {
     if (mode) setSearchMode(mode);
@@ -98,8 +118,14 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   }, [toggleTheme]);
 
   const value = useMemo(
-    () => ({ searchOpen, searchMode, openSearch, closeSearch, theme, setTheme, toggleTheme, bookmarks, toggleBookmark }),
-    [searchOpen, searchMode, openSearch, closeSearch, theme, setTheme, toggleTheme, bookmarks, toggleBookmark]
+    () => ({
+      searchOpen, searchMode, openSearch, closeSearch, theme, setTheme, toggleTheme,
+      bookmarks, toggleBookmark, platform, setPlatform, framework, setFramework,
+    }),
+    [
+      searchOpen, searchMode, openSearch, closeSearch, theme, setTheme, toggleTheme,
+      bookmarks, toggleBookmark, platform, setPlatform, framework, setFramework,
+    ]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

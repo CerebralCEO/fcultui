@@ -19,10 +19,10 @@ export default function Intro() {
   return (
     <section className="intro" ref={ref}>
       <div className="intro-heading">
-        <h1 data-reveal>For the love of beautiful &amp; functional websites</h1>
+        <h1 data-reveal>Beautiful mobile screens for Flutter &amp; React&nbsp;Native</h1>
         <div className="newsletter">
           <div className="newsletter-wrapper" data-reveal>
-            <p className="newsletter-heading">Receive a weekly digest via email</p>
+            <p className="newsletter-heading">Get new screens every week via email</p>
             <div className="newsletter-form-wrapper">
               <AnimatePresence mode="wait" initial={false}>
                 {state !== "success" ? (

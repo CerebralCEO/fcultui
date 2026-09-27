@@ -2,45 +2,43 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import AboutReveal from "@/components/AboutReveal";
 import CopyEmail from "@/components/CopyEmail";
+import { LogoIcon } from "@/components/icons";
+import { site } from "@/lib/site";
 
-export const metadata: Metadata = { title: "About Minimal Gallery – Website design inspiration - Minimal Gallery" };
+export const metadata: Metadata = { title: `About – ${site.name}` };
 
 export default function AboutPage() {
   return (
     <AboutReveal>
       <h1 data-reveal>About</h1>
       <h3 data-reveal>
-        Minimal Gallery is a curated source of website design inspiration aiming to support people in their creative process.
-        Running since 2013.
+        {site.name} is a library of ready-to-ship mobile screens. Every screen comes with pixel-identical Flutter and React
+        Native source code.
       </h3>
       <p className="author" data-reveal>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="https://minimal.gallery/wp-content/themes/minimalgallery/assets/img/avatar.png" alt="" referrerPolicy="no-referrer" />
+        <LogoIcon style={{ width: 48, height: 48, flexShrink: 0, fill: "var(--color--font-contrast)", position: "relative", top: 4 }} />
         <span>
-          The site was originally brought to life as a passion project by{" "}
-          <a href="https://x.com/PietTerheyden" target="_blank" rel="noreferrer">
-            Piet Therheyden
-          </a>{" "}
-          (acquired in 2026).
+          Flip one switch to get the React Native code. Flip it back to get Flutter. The design, layout and animations
+          never change.
         </span>
       </p>
       <p data-reveal>
-        Seeing the need for a website gallery to help designers with inspiration for client projects, he started building the
-        first version back in early 2013.
+        Hover any screen to preview its animations, then open it to copy the source, install it with our CLI, or run it
+        live in the browser.
       </p>
       <p data-reveal>
-        Minimal Gallery has since become one of the leading web design galleries, followed by tens of thousands of designers,
-        developers, agencies, marketing specialists and entrepreneurs all over the world.
+        New screens and complete app kits are added every week — onboarding, auth, dashboards, commerce, chat and much
+        more.
       </p>
       <p data-reveal>
-        If you have created or know a beautiful website, template or a useful tool, you&apos;re welcome to{" "}
-        <Link href="/about">Submit</Link> it for consideration.
+        Have a screen you&apos;d love to see? You&apos;re welcome to <Link href="/about">request it</Link> for a future
+        drop.
       </p>
       <div className="contact" data-reveal>
-        <a className="button-mini" href="mailto:hello@example.com">
+        <a className="button-mini" href={`mailto:${site.email}`}>
           Get in touch
         </a>
-        <CopyEmail email="hello@example.com" />
+        <CopyEmail email={site.email} />
       </div>
     </AboutReveal>
   );

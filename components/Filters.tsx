@@ -3,15 +3,49 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
+import { motion } from "framer-motion";
 import { useGSAP } from "@gsap/react";
 import { slug, type SearchMode } from "@/lib/data";
 import { useApp } from "./Providers";
+import { AndroidIcon, AppleIcon } from "./icons";
+import type { Platform } from "./device/Device";
 
 gsap.registerPlugin(useGSAP);
 
 type Sticky = "" | "is-showing" | "is-hiding";
 
-export default function Filters({ tags, mode, showAll = true }: { tags: string[]; mode: SearchMode; showAll?: boolean }) {
+function PlatformToggle() {
+  const { platform, setPlatform } = useApp();
+  const options: { id: Platform; label: string; Icon: typeof AppleIcon }[] = [
+    { id: "ios", label: "iOS", Icon: AppleIcon },
+    { id: "android", label: "Android", Icon: AndroidIcon },
+  ];
+  return (
+    <div className="platform-toggle" role="radiogroup" aria-label="Device frame">
+      {options.map(({ id, label, Icon }) => (
+        <button key={id} role="radio" aria-checked={platform === id} className={platform === id ? "active" : undefined} onClick={() => setPlatform(id)}>
+          {platform === id && (
+            <motion.span layoutId="platform-pill" className="pill" transition={{ type: "spring", stiffness: 500, damping: 38 }} />
+          )}
+          <Icon />
+          <span className="label">{label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export default function Filters({
+  tags,
+  mode,
+  showAll = true,
+  showPlatform = false,
+}: {
+  tags: string[];
+  mode: SearchMode;
+  showAll?: boolean;
+  showPlatform?: boolean;
+}) {
   const { openSearch } = useApp();
   const anchorRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
@@ -98,7 +132,7 @@ export default function Filters({ tags, mode, showAll = true }: { tags: string[]
     { scope: sectionRef }
   );
 
-  const base = mode === "templates" ? "/templates" : mode === "tools" ? "/tools" : "/websites";
+  const base = `/${mode}`;
 
   return (
     <>
@@ -119,6 +153,7 @@ export default function Filters({ tags, mode, showAll = true }: { tags: string[]
               ))}
             </ul>
           </div>
+          {showPlatform && <PlatformToggle />}
           {showAll && (
             <ul className="tags-menu tags-menu-button">
               <li>
