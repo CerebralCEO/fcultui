@@ -32,6 +32,8 @@ colors:
   glass-border: "rgba(255,255,255,0.08)"
   glass-fill: "rgba(255,255,255,0.12)" # buttons inside the glass bar (0.2 on hover)
   code-background: "#0c0c0c"        # --color--code-background (#fafafa in light)
+  badge-new: "{colors.promo-lime}"  # nav "New" badge
+  badge-updated: "#8be9df"          # --color--badge-updated, nav "Updated" badge
   # --- Light theme overrides (html.light) ---
   light-canvas: "#ffffff"
   light-body: "#4c4c4c"
@@ -510,8 +512,21 @@ Gallery cards follow Mobbin's anatomy: **tile, then meta row**.
 
 ### Screen Detail Page (`/screens/[slug]`)
 This page follows the Aceternity component-page anatomy, built only from FCult tokens:
-- **Grid**: `248px` sticky left rail, then the content column (max 880px), then a `190px` "On this page" TOC at 1300px and above. Columns are separated by `{spacing.page}`-scale gaps (56px). Below 992px only the content column remains.
-- **Left rail** (`.detail-sidebar`): screens grouped by category. Links are 15px `{colors.body}`; the active link gets `{colors.surface-25}` with 8px radius. A lime All-Access card sits at the bottom. The rail has a hairline right border.
+- **Grid**: a `264px` sticky left rail, then `.detail-body`. The body contains the content column (max 880px, **centred** with `justify-self: center` so the gaps on both sides stay equal) and a `190px` "On this page" TOC at 1300px and above. The body starts 56px after the rail, with a 48px gap before the TOC. Below 992px only the content column remains.
+- **Persistent shell**: the rail lives in `app/screens/(detail)/layout.tsx`, so it never remounts between screens (it keeps its scroll position, and the active pill springs from item to item). The article fades and rises 14px (0.6s expo) via `(detail)/template.tsx`.
+- **Left rail** (`.detail-sidebar`, cult-ui inspired):
+  - Content is masked with 22px/36px fades at the top and bottom, and the rail has a hairline right border.
+  - At the top, a `nav-filter` (38px, radius 10, live filtering, screen count kbd).
+  - A **"GET STARTED"** section, then **"SCREENS"**. Section headings are 12px/510 uppercase with 0.1em tracking, in ink.
+  - **Category** headings are 16px/510 ink.
+  - Items are 14.5px `{colors.body}` with a 6px accent dot and an 8px radius. On hover a `{colors.surface}` wash fades in.
+  - The active item gets a **framer `layoutId` pill** (`{colors.surface-25}` + 1px `hairline-strong` inset ring, spring 420/38).
+  - Badges are 11px/510, 6px radius, dark text: **New** uses `{colors.badge-new}` and **Updated** uses `{colors.badge-updated}`. Pro screens show a 12px lock.
+  - The lime All-Access card closes the rail.
+- **Mobile (<992px)**:
+  - A sticky, blurred **screen bar** sits under the header. It holds a 50px button (grid icon, category over title, chevron) that opens the sheet, plus 42px previous/next step buttons.
+  - The **bottom sheet** is portalled to `<body>`, springs up (380/38) and has a max height of 86dvh. It can be dragged down from its handle (dragging closes it past 120px or a flick), and ESC or a backdrop tap also closes it. It reuses the same list at 16px.
+- **Pager**: previous/next cards (hairline border, `surface-subtle`, 17px/510 title; the arrow nudges 3px on hover). They sit two per row, stacking below 600px.
 - **Header**:
   - A breadcrumb (15px) and an h1 at `{typography.display-intro}` size, left-aligned, revealed with SplitText.
   - A 19px lead paragraph.
@@ -530,7 +545,11 @@ This page follows the Aceternity component-page anatomy, built only from FCult t
   - Long files collapse to 340px behind a fade and an "Expand" `button-mini`.
 - **Installation**: CLI | Manual segmented control, then a numbered step timeline (hairline left rule, 30px `surface-25` number bubbles with a canvas ring). Manual steps are: dependencies, tokens, source and usage.
 - **Screens in this flow**: one `PreviewPanel` per remaining flow screen, each under a 20px/510 h3.
-- **Props**: a hairline-bordered table (14px muted headers, 15px cells, 13px mono `code` chips on `{colors.surface}`) with Flutter and React Native type columns.
+- **Props**: a hairline-bordered table (14px muted headers, 15px cells, 13px mono `code` chips on `{colors.surface}`) with Flutter and React Native type columns. On phones each row becomes a stacked card (label column 104px + value).
+- **Phone layout (≤767px)**:
+  - Preview/Code tabs stretch to full width, and the tools become one swipeable row that bleeds to the edges with fades.
+  - The panel is 540px tall (500px for examples).
+  - Code is 12px, the timeline is tighter, and section headings are 22px.
 - **More screens**: a 3-column `.posts.screens` grid of regular screen tiles.
 - **TOC**: a hairline left rule; the active item gets a 2px ink marker that slides with a framer `layoutId` spring.
 

@@ -44,6 +44,9 @@ Motion, GSAP, Lenis, Tailwind v4 utilities without preflight).
   `__NAME__`, `__TITLE__`, `__ACCENT__` are filled per screen by `lib/code.ts`, which also Shiki-highlights at build time.
   `content/` is excluded from the site's tsconfig/eslint — it is Flutter/Expo code, not Next.js code.
 - Both implementations of a design must stay pixel- and timing-identical (same tokens, same durations/easings).
+- `/screens/[slug]` lives in the `app/screens/(detail)/` route group: `layout.tsx` holds the persistent rail + mobile
+  bar/sheet (`components/detail/ScreenNav.tsx`), `template.tsx` animates the article. Anything `position: fixed`
+  under page transitions must be portalled to `document.body` (ancestors carry transforms).
 - `/screens/[slug]` is fully static (`generateStaticParams`). Per-design copy, tags, RN deps and props live in
   `lib/screen-meta.ts`.
 - Framework-dependent code renders both panes; visibility is driven by `html[data-fw]` (set before paint by the boot

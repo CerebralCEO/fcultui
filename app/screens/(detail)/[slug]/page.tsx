@@ -5,11 +5,11 @@ import { screens } from "@/lib/data";
 import { designMeta, pascal } from "@/lib/screen-meta";
 import { cliCommand, getScreenCode, getSharedCode } from "@/lib/code";
 import { site } from "@/lib/site";
-import Sidebar from "@/components/detail/Sidebar";
 import PreviewPanel from "@/components/detail/PreviewPanel";
 import Installation from "@/components/detail/Installation";
 import Toc from "@/components/detail/Toc";
 import DetailReveal from "@/components/detail/DetailReveal";
+import { ScreenPager } from "@/components/detail/ScreenNav";
 import PostsGrid from "@/components/PostsGrid";
 import { ScreenCard } from "@/components/ScreenCards";
 
@@ -66,9 +66,7 @@ export default async function ScreenPage({ params }: PageProps<"/screens/[slug]"
   const more = [...sameCategory, ...related].slice(0, 3);
 
   return (
-    <div className="detail">
-      <Sidebar active={screen.slug} />
-
+    <>
       <article className="detail-main">
         <DetailReveal>
           <nav className="crumbs" aria-label="Breadcrumb" data-reveal>
@@ -153,17 +151,17 @@ export default async function ScreenPage({ params }: PageProps<"/screens/[slug]"
               <tbody>
                 {meta.props.map((p) => (
                   <tr key={p.name}>
-                    <td>
+                    <td data-label="Prop">
                       <code>{p.name}</code>
                     </td>
-                    <td>
+                    <td data-label="Flutter">
                       <code>{p.flutter}</code>
                     </td>
-                    <td>
+                    <td data-label="React Native">
                       <code>{p.rn}</code>
                     </td>
-                    <td>{p.default === "Screen accent" ? <code>{screen.accent}</code> : p.default}</td>
-                    <td>{p.description}</td>
+                    <td data-label="Default">{p.default === "Screen accent" ? <code>{screen.accent}</code> : p.default}</td>
+                    <td data-label="Description">{p.description}</td>
                   </tr>
                 ))}
               </tbody>
@@ -174,6 +172,8 @@ export default async function ScreenPage({ params }: PageProps<"/screens/[slug]"
             <code>SafeAreaProvider</code>; Flutter needs no extra setup.
           </p>
         </section>
+
+        <ScreenPager slug={screen.slug} />
 
         <section id="more" className="detail-section">
           <h2>More screens</h2>
@@ -188,6 +188,6 @@ export default async function ScreenPage({ params }: PageProps<"/screens/[slug]"
       <aside className="detail-toc">
         <Toc items={TOC} />
       </aside>
-    </div>
+    </>
   );
 }
