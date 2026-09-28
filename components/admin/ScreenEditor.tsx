@@ -4,19 +4,30 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { deleteScreen, saveScreen, setScreenStatus, type ScreenInput, type SourceInput } from "@/app/admin/actions";
+import { addScreen, deleteScreen, saveScreen, setScreenStatus, type ScreenInput, type SourceInput } from "@/app/admin/actions";
 import type { PropRow } from "@/lib/content-types";
 import { ScaledDevice } from "../device/Device";
 import ScreenView from "../device/ScreenView";
 import Segmented from "../detail/Segmented";
 import PlatformToggle from "../PlatformToggle";
 import { useApp } from "../Providers";
-import { ArrowUpRightIcon, CloseIcon, FlutterIcon, ReactIcon } from "../icons";
+import { ArrowRightIcon, ArrowUpRightIcon, CheckIcon, CloseIcon, FlutterIcon, ReactIcon } from "../icons";
 import CodeEditor, { monacoLanguage } from "./CodeEditor";
 import { ConfirmButton, Field, Spinner, StatusBadge, useToast, type Status } from "./ui";
+import { Stepper, type StepItem } from "./Steps";
 
-type Tab = "details" | "code" | "props";
+/** The upload flow for one screen. Every step stays reachable; "Continue" saves and moves on. */
+export type EditorStep = "details" | "flutter" | "rn" | "props" | "publish";
 type Fw = "flutter" | "rn";
+
+const ORDER: EditorStep[] = ["details", "flutter", "rn", "props", "publish"];
+const STEP_LABEL: Record<EditorStep, string> = {
+  details: "Details",
+  flutter: "Flutter",
+  rn: "React Native",
+  props: "Props",
+  publish: "Review & publish",
+};
 
 const ease = [0.16, 1, 0.3, 1] as const;
 const EMPTY_PROP: PropRow = { name: "", flutter: "", rn: "", default: "", description: "" };
@@ -33,17 +44,23 @@ export default function ScreenEditor({
   status,
   app,
   initial,
+  initialStep = "details",
+  flow,
 }: {
   id: number;
   status: Status;
   app: { id: number; name: string; slug: string; accent: string };
   initial: ScreenInput;
+  initialStep?: EditorStep;
+  /** Position in the app's flow and the screen after this one. */
+  flow: { index: number; total: number; next: { id: number; label: string } | null };
 }) {
   const router = useRouter();
   const { platform } = useApp();
   const { toast, show } = useToast();
-  const [tab, setTab] = useState<Tab>("details");
-  const [fw, setFw] = useState<Fw>("flutter");
+  const [tab, setTab] = useState<EditorStep>(initialStep);
+  const fw: Fw = tab === "rn" ? "rn" : "flutter";
+  const [adding, startAdd] = useTransition();
   const [v, setV] = useState<ScreenInput>(initial);
   const [saved, setSaved] = useState(() => JSON.stringify(initial));
   const [saving, startSave] = useTransition();
@@ -110,7 +127,38 @@ export default function ScreenEditor({
   const src = v[fw];
   const path = src.path || defaultPath(fw, v.title);
   const hasCode = { flutter: Boolean(v.flutter.code.trim()), rn: Boolean(v.rn.code.trim()) };
-  const step = { slug: v.slug, label: v.label || "Screen", title: v.title, tone: v.tone, bundleUrl: null };
+  const preview = { slug: v.slug, label: v.label || "Screen", title: v.title, tone: v.tone, bundleUrl: null };
+
+  // Step completeness (props are optional)
+  const detailsDone = Boolean(v.title.trim() && v.label.trim() && v.slug.trim());
+  const ready = detailsDone && hasCode.flutter && hasCode.rn;
+  const steps: StepItem<EditorStep>[] = [
+    { id: "details", label: "Details", hint: "Title, label, tone", state: detailsDone ? "done" : "todo" },
+    { id: "flutter", label: "Flutter", hint: "Dart source", state: hasCode.flutter ? "done" : "todo" },
+    { id: "rn", label: "React Native", hint: "TSX source", state: hasCode.rn ? "done" : "todo" },
+    { id: "props", label: "Props", hint: "Optional", state: v.props.length ? "done" : "optional" },
+    { id: "publish", label: "Publish", hint: status === "live" ? "Live" : "Review", state: status === "live" && !dirty ? "done" : "todo" },
+  ];
+  const at = ORDER.indexOf(tab);
+  const nextStep = ORDER[at + 1];
+  const prevStep = ORDER[at - 1];
+
+  // Continue saves pending edits first, then moves on
+  const go = (to: EditorStep) => {
+    const move = () => {
+      setTab(to);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+    if (dirty) save(move);
+    else move();
+  };
+
+  const addNext = () =>
+    startAdd(async () => {
+      const r = await addScreen(app.id);
+      if (r.ok) router.push(`/admin/screens/${r.id}`);
+      else show(r.error, "error");
+    });
 
   return (
     <div className="admin-editor-page">
@@ -153,28 +201,13 @@ export default function ScreenEditor({
             <button type="button" className="tool-btn" onClick={() => save()} disabled={saving || !dirty}>
               <span>{saving ? <Spinner /> : "Save"}</span>
             </button>
-            {status === "live" ? (
-              <button type="button" className="tool-btn" onClick={() => publish("draft")} disabled={publishing}>
-                <span>{publishing ? <Spinner /> : "Unpublish"}</span>
-              </button>
-            ) : (
-              <button type="button" className="admin-primary sm" onClick={() => publish("live")} disabled={publishing}>
-                {publishing ? <Spinner /> : "Publish"}
-              </button>
-            )}
           </div>
         </div>
-        <Segmented<Tab>
-          label="Editor section"
-          layoutId="admin-editor-tab"
-          value={tab}
-          onChange={setTab}
-          options={[
-            { id: "details", label: "Details" },
-            { id: "code", label: `Code${hasCode.flutter && hasCode.rn ? "" : " ·"}` },
-            { id: "props", label: `Props${v.props.length ? ` ${v.props.length}` : ""}` },
-          ]}
-        />
+        <p className="admin-flow-pos">
+          Screen {String(flow.index + 1).padStart(2, "0")} of {String(flow.total).padStart(2, "0")} in {app.name}
+          {flow.index === 0 && " · gallery cover"}
+        </p>
+        <Stepper steps={steps} active={tab} onSelect={go} layoutId="admin-editor-step" />
       </header>
 
       <AnimatePresence mode="wait" initial={false}>
@@ -278,7 +311,7 @@ export default function ScreenEditor({
                 </div>
                 <div className="admin-device-stage">
                   <ScaledDevice platform={platform} tone={v.tone} playing accent={app.accent} fit={0.94}>
-                    <ScreenView step={step} />
+                    <ScreenView step={preview} />
                   </ScaledDevice>
                 </div>
                 <p className="admin-hint">Live renders arrive with the React Native and Flutter pipelines.</p>
@@ -287,19 +320,18 @@ export default function ScreenEditor({
           )}
 
           {/* ---------- Code ---------- */}
-          {tab === "code" && (
+          {(tab === "flutter" || tab === "rn") && (
             <div className="admin-card admin-code">
-              <div className="admin-code-bar">
-                <Segmented<Fw>
-                  label="Framework"
-                  layoutId="admin-fw"
-                  value={fw}
-                  onChange={setFw}
-                  options={[
-                    { id: "flutter", label: "Flutter", icon: <FlutterIcon /> },
-                    { id: "rn", label: "React Native", icon: <ReactIcon /> },
-                  ]}
-                />
+              <div className="admin-step-intro">
+                <span className="admin-step-icon">{fw === "flutter" ? <FlutterIcon /> : <ReactIcon />}</span>
+                <span>
+                  <strong>{fw === "flutter" ? "Flutter source" : "React Native source"}</strong>
+                  <em>
+                    {fw === "flutter"
+                      ? "Paste the Dart widget, or drop the .dart file onto the editor. It stays members-only on the site."
+                      : "Paste the Expo component, or drop the .tsx file onto the editor. It is public on the site."}
+                  </em>
+                </span>
                 <span className="admin-code-state">
                   <i className={hasCode.flutter ? "on" : undefined} /> Flutter
                   <i className={hasCode.rn ? "on" : undefined} /> React Native
@@ -409,8 +441,97 @@ export default function ScreenEditor({
               </div>
             </div>
           )}
+
+          {/* ---------- Review & publish ---------- */}
+          {tab === "publish" && (
+            <div className="admin-card admin-review">
+              <ul className="admin-checklist">
+                {(
+                  [
+                    { ok: detailsDone, label: "Details", note: detailsDone ? `${v.title} · ${v.label}` : "Title, label and slug are required", to: "details" },
+                    { ok: hasCode.flutter, label: "Flutter source", note: hasCode.flutter ? `${v.flutter.code.split("\n").length} lines` : "Required", to: "flutter" },
+                    { ok: hasCode.rn, label: "React Native source", note: hasCode.rn ? `${v.rn.code.split("\n").length} lines` : "Required", to: "rn" },
+                    { ok: true, optional: !v.props.length, label: "Props", note: v.props.length ? `${v.props.length} props` : "None — optional", to: "props" },
+                  ] as { ok: boolean; optional?: boolean; label: string; note: string; to: EditorStep }[]
+                ).map((c) => (
+                  <li key={c.label} className={c.ok ? (c.optional ? "is-optional" : "is-done") : "is-todo"}>
+                    <span className="admin-step-num">{c.ok && !c.optional ? <CheckIcon /> : c.optional ? "–" : "!"}</span>
+                    <span className="admin-step-text">
+                      <strong>{c.label}</strong>
+                      <em>{c.note}</em>
+                    </span>
+                    <button type="button" className="tool-btn" onClick={() => go(c.to)}>
+                      <span>{c.ok ? "Edit" : "Add"}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+
+              {status === "live" && !dirty ? (
+                <div className="admin-review-done">
+                  <strong>
+                    <CheckIcon /> Live on the site
+                  </strong>
+                  <p>Edits you save go live straight away.</p>
+                  <div className="admin-actions">
+                    <button type="button" className="admin-danger" onClick={() => publish("draft")} disabled={publishing}>
+                      {publishing ? <Spinner /> : "Unpublish"}
+                    </button>
+                    <Link href={`/screens/${app.slug}${flow.index > 0 ? `?screen=${flow.index}` : ""}`} className="tool-btn" target="_blank">
+                      <span>
+                        View on site <ArrowUpRightIcon />
+                      </span>
+                    </Link>
+                    {flow.next ? (
+                      <Link href={`/admin/screens/${flow.next.id}`} className="admin-primary sm">
+                        Next screen: {flow.next.label} <ArrowRightIcon />
+                      </Link>
+                    ) : (
+                      <button type="button" className="admin-primary sm" onClick={addNext} disabled={adding}>
+                        {adding ? <Spinner /> : <>Add another screen <ArrowRightIcon /></>}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="admin-actions">
+                  <span className="admin-hint">
+                    {ready ? "Everything required is in place. Publishing makes this screen public." : "Finish the required steps to publish."}
+                  </span>
+                  <Link href={`/admin/apps/${app.id}`} className="tool-btn">
+                    <span>Back to app</span>
+                  </Link>
+                  <button type="button" className="admin-primary" onClick={() => publish("live")} disabled={publishing || !ready}>
+                    {publishing ? <Spinner /> : status === "live" ? "Save & keep live" : "Publish screen"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </motion.div>
       </AnimatePresence>
+
+      {tab !== "publish" && (
+        <nav className="admin-step-nav" aria-label="Step navigation">
+          {prevStep ? (
+            <button type="button" className="tool-btn" onClick={() => go(prevStep)}>
+              <span>← {STEP_LABEL[prevStep]}</span>
+            </button>
+          ) : (
+            <Link href={`/admin/apps/${app.id}`} className="tool-btn">
+              <span>← {app.name}</span>
+            </Link>
+          )}
+          <span className="admin-step-count">
+            Step {at + 1} of {ORDER.length}
+          </span>
+          {nextStep && (
+            <button type="button" className="admin-primary" onClick={() => go(nextStep)} disabled={saving}>
+              {saving ? <Spinner /> : <>{dirty ? "Save & continue" : "Continue"}<span className="step-long"> to {STEP_LABEL[nextStep]}</span> <ArrowRightIcon /></>}
+            </button>
+          )}
+        </nav>
+      )}
       {toast}
     </div>
   );

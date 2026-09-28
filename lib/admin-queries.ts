@@ -47,14 +47,32 @@ export async function adminApps(): Promise<AdminApp[]> {
   });
 }
 
-export async function adminApp(id: number): Promise<AdminApp | null> {
+export type ScreenProgress = AdminScreenRow & { hasFlutter: boolean; hasRn: boolean };
+export type AppProgress = Omit<AdminApp, "screens"> & { screens: ScreenProgress[] };
+
+/** One app with per-screen code completeness — drives the launch checklist and the flow list. */
+export async function adminAppProgress(id: number): Promise<AppProgress | null> {
   if (!db || !Number.isInteger(id)) return null;
   const app = await db.query.apps.findFirst({
     where: eq(apps.id, id),
     columns: { id: true, slug: true, name: true, category: true, accent: true, logoId: true, tagline: true, position: true, updatedAt: true },
-    with: { screens: { columns: screenCols, orderBy: [asc(screens.position), asc(screens.id)] } },
+    with: {
+      screens: {
+        columns: screenCols,
+        orderBy: [asc(screens.position), asc(screens.id)],
+        with: { sources: { columns: { framework: true } } },
+      },
+    },
   });
-  return app ?? null;
+  if (!app) return null;
+  return {
+    ...app,
+    screens: app.screens.map(({ sources, ...s }) => ({
+      ...s,
+      hasFlutter: sources.some((x) => x.framework === "flutter"),
+      hasRn: sources.some((x) => x.framework === "rn"),
+    })),
+  };
 }
 
 export async function adminRecentScreens(limit = 8) {

@@ -3,12 +3,14 @@ import { notFound } from "next/navigation";
 import AppForm from "@/components/admin/AppForm";
 import FlowList from "@/components/admin/FlowList";
 import { requireAdmin } from "@/lib/admin";
-import { adminApp, adminApps } from "@/lib/admin-queries";
+import { AppJourney } from "@/components/admin/Steps";
+import { adminAppProgress, adminApps } from "@/lib/admin-queries";
+import { appJourney } from "@/lib/admin-journey";
 
 export default async function AdminAppPage({ params }: PageProps<"/admin/apps/[id]">) {
   await requireAdmin();
   const { id } = await params;
-  const [app, all] = await Promise.all([adminApp(Number(id)), adminApps()]);
+  const [app, all] = await Promise.all([adminAppProgress(Number(id)), adminApps()]);
   if (!app) notFound();
   const live = app.screens.some((s) => s.status === "live");
 
@@ -33,14 +35,16 @@ export default async function AdminAppPage({ params }: PageProps<"/admin/apps/[i
         <p className="admin-lead">{app.tagline || "No tagline yet."}</p>
       </header>
 
-      <section className="admin-section">
+      <AppJourney steps={appJourney(app)} done={live ? { href: `/screens/${app.slug}`, label: "View on site" } : undefined} />
+
+      <section id="flow" className="admin-section">
         <h2>
           Flow <span className="detail-h2-sub">· {app.screens.length} {app.screens.length === 1 ? "screen" : "screens"}</span>
         </h2>
         <FlowList appId={app.id} screens={app.screens} />
       </section>
 
-      <section className="admin-section">
+      <section id="details" className="admin-section">
         <h2>Details</h2>
         <AppForm
           key={app.id}

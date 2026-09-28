@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Reorder, useDragControls } from "framer-motion";
 import { addScreen, reorderScreens } from "@/app/admin/actions";
-import type { AdminScreenRow } from "@/lib/admin-queries";
+import type { ScreenProgress } from "@/lib/admin-queries";
 import { ArrowRightIcon } from "../icons";
 import { Spinner, StatusBadge, useToast } from "./ui";
 
@@ -15,7 +15,7 @@ const Grip = () => (
   </svg>
 );
 
-function Row({ s, index, onDrop }: { s: AdminScreenRow; index: number; onDrop: () => void }) {
+function Row({ s, index, onDrop }: { s: ScreenProgress; index: number; onDrop: () => void }) {
   const controls = useDragControls();
   return (
     <Reorder.Item
@@ -35,6 +35,10 @@ function Row({ s, index, onDrop }: { s: AdminScreenRow; index: number; onDrop: (
         <strong>{s.label}</strong>
         <span>{s.title}</span>
       </span>
+      <span className="admin-code-state" aria-label="Code">
+        <i className={s.hasFlutter ? "on" : undefined} /> Flutter
+        <i className={s.hasRn ? "on" : undefined} /> RN
+      </span>
       <StatusBadge status={s.status} />
       <Link href={`/admin/screens/${s.id}`} className="tool-btn">
         Edit <ArrowRightIcon />
@@ -44,7 +48,7 @@ function Row({ s, index, onDrop }: { s: AdminScreenRow; index: number; onDrop: (
 }
 
 /** The app's flow: drag to reorder (index 0 is the gallery cover), open a screen, add a new one. */
-export default function FlowList({ appId, screens }: { appId: number; screens: AdminScreenRow[] }) {
+export default function FlowList({ appId, screens }: { appId: number; screens: ScreenProgress[] }) {
   const router = useRouter();
   const { toast, show } = useToast();
   const [items, setItems] = useState(screens);

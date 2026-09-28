@@ -75,6 +75,10 @@ Motion, GSAP, Lenis, Tailwind v4 utilities without preflight).
 - Admin reads go through `lib/admin-queries.ts` (uncached, includes Flutter source). Mutations are server actions that
   highlight code with Shiki at save time and call `updateTag("content")` so the public site updates at once.
 - Publishing a screen requires both Flutter and React Native source. Only `live` screens are public.
+- **Upload flow is guided, not locked.** App level: `lib/admin-journey.ts` computes the launch checklist
+  (details → screens → code → publish) with one "next step" CTA. Screen level: `ScreenEditor` is a 5-step stepper
+  (Details → Flutter → React Native → Props (optional) → Review & publish); "Continue" saves first; `?step=` deep-links a
+  step. After publishing it offers the next screen (or "Add another screen"). Every step stays clickable.
 - App logos live in the `logos` table (base64, ≤256px WebP or SVG) and are served by `/api/logos/[id]` (immutable cache,
   strict CSP). `apps.logo_id` points at one. There is no manual colour field: `apps.accent` is the logo's dominant colour,
   extracted in the browser on upload (`components/admin/LogoPicker.tsx`). Without a logo the UI falls back to the accent monogram.
